@@ -1,0 +1,63 @@
+object MainForm: TMainForm
+  Left = 392
+  Height = 480
+  Top = 30
+  Width = 640
+  Caption = 'YeeHAA GUI Demo'
+  ClientHeight = 480
+  ClientWidth = 640
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  Position = poScreenCenter
+  object GBBulbList: TGroupBox
+    Left = 0
+    Height = 480
+    Top = 0
+    Width = 312
+    Align = alLeft
+    Caption = 'Bulb List'
+    ClientHeight = 450
+    ClientWidth = 308
+    TabOrder = 0
+    object LBBulbList: TListBox
+      AnchorSideLeft.Control = GBBulbList
+      AnchorSideTop.Control = GBBulbList
+      AnchorSideRight.Control = GBBulbList
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = BClear
+      Left = 0
+      Height = 422
+      Top = 0
+      Width = 308
+      Align = alCustom
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      ItemHeight = 0
+      TabOrder = 0
+    end
+    object BClear: TButton
+      AnchorSideTop.Control = LBBulbList
+      AnchorSideTop.Side = asrBottom
+      AnchorSideBottom.Control = GBBulbList
+      AnchorSideBottom.Side = asrBottom
+      Left = 117
+      Height = 28
+      Hint = 'Clears discovered bulb list'#10'Auto discovery will still run and repopulate the list shortly after'
+      Top = 422
+      Width = 75
+      Align = alCustom
+      Anchors = [akBottom]
+      Caption = 'Cl&ear'
+      OnClick = BClearClick
+      TabOrder = 1
+    end
+  end
+  object GBBulbProps: TGroupBox
+    Left = 312
+    Height = 480
+    Top = 0
+    Width = 328
+    Align = alClient
+    Caption = 'Bulb Properties'
+    TabOrder = 1
+  end
+end

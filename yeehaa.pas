@@ -24,6 +24,8 @@ type
 
   TBulbInfos = specialize TFPGMap<String,TBulbInfo>;
 
+  TBulbFoundEvent = procedure (const ANewBulb: TBulbInfo) of object;
+
   { TYeeConn }
 
   TYeeConn = class
@@ -31,6 +33,7 @@ type
     FConn: TLUdp;
     FBroadcastThread: TThread;
     FBulbInfos: TBulbInfos;
+    FOnBulbFound: TBulbFoundEvent;
     procedure CanSend(aSocket: TLSocket);
     procedure Error(const msg: string; aSocket: TLSocket);
     procedure Receive(aSocket: TLSocket);
@@ -40,6 +43,7 @@ type
     destructor Destroy; override;
     procedure RefreshBulbs;
     property BulbInfos: TBulbInfos read FBulbInfos;
+    property OnBulbFound: TBulbFoundEvent write FOnBulbFound;
   end;
 
 implementation
@@ -125,6 +129,7 @@ begin
     LRawResponseStream.Free;
 
     FBulbInfos[LBulbInfo.IP] := LBulbInfo;
+    if Assigned(FOnBulbFound) then FOnBulbFound(LBulbInfo);
     {$ifdef debug}WriteLn(FBulbInfos.Count, ' bulb(s) found');{$endif}
   end else begin
     WriteLn('Receive called with no message');
