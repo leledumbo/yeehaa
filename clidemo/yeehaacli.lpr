@@ -3,6 +3,7 @@ program yeehaacli;
 {$mode objfpc}{$H+}
 
 uses
+  cthreads,
   Yeehaa;
 
 const

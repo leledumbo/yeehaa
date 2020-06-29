@@ -5,8 +5,8 @@ unit Yeehaa;
 interface
 
 uses
-  cthreads,
-  Classes, SysUtils, StreamIO, fgl,
+  Classes, SysUtils, StreamIO,
+  fgl,
   lNet;
 
 const
@@ -112,11 +112,12 @@ begin
         LKey := Copy(LResponseLine,1,LColonPos - 1);
         LValue := Copy(LResponseLine,LColonPos + 2,Length(LResponseLine) - LColonPos + 2);
         case LKey of
-          'Location': LBulbInfo.IP:=Copy(LValue,12,Length(LValue) - 17);
-          'model'   : LBulbInfo.Model:=LValue;
-          'power'   : LBulbInfo.Power:=LValue;
-          'bright'  : LBulbInfo.Brightness:=LValue;
-          'rgb'     : LBulbInfo.RGB:=LValue;
+          // strip away protocol and port, only address is required
+          'Location': LBulbInfo.IP         := Copy(LValue,12,Length(LValue) - 17);
+          'model'   : LBulbInfo.Model      := LValue;
+          'power'   : LBulbInfo.Power      := LValue;
+          'bright'  : LBulbInfo.Brightness := LValue;
+          'rgb'     : LBulbInfo.RGB        := LValue;
         end;
       end;
     end;

@@ -1,0 +1,7 @@
+*.o
+*.ppu
+*.compiled
+/clidemo/yeehaacli
+*.lps
+/library/libyeehaalib.so
+/library/ctest/yeehaalibtest
