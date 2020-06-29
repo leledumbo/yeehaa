@@ -15,15 +15,19 @@ application in Pascal, of course.
 ## Status
 POC:
 * Working prototype capable of discovering bulbs and print some of their properties
+* Event driven support mainly useful for GUI (OnBulbFound)
 * Library and C header file alongside C example
+* CLI & GUI demo in Pascal
+
+API is considered unstable as of now, it may break anytime as I find "better" interface as development goes
 
 ## Requirements and Dependencies
 * FPC 3.X.X
-* Lazarus to ease building (none of the LCL is used for the unit/library)
+* Lazarus to build the GUI demo and ease building the library and unit
 * lNet (lnetbase to be precise, install from Lazarus' online package manager)
 
 ## How to Build
-1. Open yeehaa.lpg if you have project group package installed in Lazarus, alternatively go to any of the subdirectory library or clidemo
+1. Open yeehaa.lpg if you have project group package installed in Lazarus, alternatively go to any of the subdirectory library, clidemo or guidemo
 2. If you open the project group, choose one of the projects in project group window, otherwise, open the .lpi in the subdirectory
 3. Compile Ctrl+F9, optionally choosing build mode (Debug/Release)
 
@@ -34,3 +38,6 @@ Contains a project to build the dynamic library and a C interface alongside a C 
 
 ### clidemo
 Contain a demo CLI project that uses the unit directly
+
+### guidemo
+Contain a demo GUI project that uses the unit directly
