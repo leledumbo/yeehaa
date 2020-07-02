@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  StdCtrls, syncobjs, fgl, Yeehaa;
+  StdCtrls, Spin, syncobjs, fgl, Yeehaa;
 
 type
 
@@ -15,13 +15,23 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    CBPoweredOn: TCheckBox;
+    CBColor: TColorButton;
+    EdModel: TEdit;
     GBBulbList: TGroupBox;
+    LbModel: TLabel;
+    LbPoweredOn: TLabel;
+    LbBrightness: TLabel;
+    LbRGB: TLabel;
     LBBulbList: TListBox;
     GBBulbProps: TGroupBox;
     BClear: TButton;
+    SEBrightness: TSpinEdit;
+    Splitter1: TSplitter;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure BClearClick(Sender: TObject);
+    procedure LBBulbListSelectionChange(Sender: TObject; User: boolean);
   private
     FYeeConn: TYeeConn;
     FBulbMap: TBulbMap;
@@ -70,6 +80,21 @@ begin
     LBBulbList.Clear;
   finally
     FCS.Leave;
+  end;
+end;
+
+procedure TMainForm.LBBulbListSelectionChange(Sender: TObject; User: boolean);
+var
+  LBulb: TBulbInfo;
+begin
+  try
+    LBulb := FBulbMap[LBBulbList.GetSelectedText];
+    EdModel.Text := LBulb.Model;
+    CBPoweredOn.Checked := LBulb.Power = 'on';
+    SEBrightness.Value := StrToIntDef(LBulb.Brightness,0);
+    CBColor.ButtonColor := TColor(StrToIntDef(LBulb.RGB,0));
+  except
+     on e: EListError do ; // intentionally ignored
   end;
 end;
 

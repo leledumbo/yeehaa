@@ -16,8 +16,8 @@ object MainForm: TMainForm
     Width = 312
     Align = alLeft
     Caption = 'Bulb List'
-    ClientHeight = 450
-    ClientWidth = 308
+    ClientHeight = 460
+    ClientWidth = 310
     TabOrder = 0
     object LBBulbList: TListBox
       AnchorSideLeft.Control = GBBulbList
@@ -26,23 +26,26 @@ object MainForm: TMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = BClear
       Left = 0
-      Height = 422
+      Height = 432
       Top = 0
-      Width = 308
+      Width = 310
       Align = alCustom
       Anchors = [akTop, akLeft, akRight, akBottom]
       ItemHeight = 0
+      OnSelectionChange = LBBulbListSelectionChange
+      ScrollWidth = 308
       TabOrder = 0
+      TopIndex = -1
     end
     object BClear: TButton
       AnchorSideTop.Control = LBBulbList
       AnchorSideTop.Side = asrBottom
       AnchorSideBottom.Control = GBBulbList
       AnchorSideBottom.Side = asrBottom
-      Left = 117
+      Left = 118
       Height = 28
       Hint = 'Clears discovered bulb list'#10'Auto discovery will still run and repopulate the list shortly after'
-      Top = 422
+      Top = 432
       Width = 75
       Align = alCustom
       Anchors = [akBottom]
@@ -52,12 +55,92 @@ object MainForm: TMainForm
     end
   end
   object GBBulbProps: TGroupBox
+    Left = 317
+    Height = 480
+    Top = 0
+    Width = 323
+    Align = alClient
+    Caption = 'Bulb Properties'
+    ChildSizing.EnlargeHorizontal = crsHomogenousSpaceResize
+    ChildSizing.EnlargeVertical = crsHomogenousSpaceResize
+    ChildSizing.ShrinkHorizontal = crsHomogenousSpaceResize
+    ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
+    ChildSizing.Layout = cclLeftToRightThenTopToBottom
+    ChildSizing.ControlsPerLine = 2
+    ClientHeight = 460
+    ClientWidth = 321
+    TabOrder = 1
+    object LbModel: TLabel
+      Left = 53
+      Height = 31
+      Top = 72
+      Width = 84
+      Caption = 'Model'
+      Layout = tlCenter
+      ParentColor = False
+    end
+    object EdModel: TEdit
+      Left = 190
+      Height = 31
+      Top = 72
+      Width = 80
+      TabOrder = 0
+    end
+    object LbPoweredOn: TLabel
+      Left = 53
+      Height = 21
+      Top = 175
+      Width = 84
+      Caption = 'Powered On?'
+      Layout = tlCenter
+      ParentColor = False
+    end
+    object CBPoweredOn: TCheckBox
+      Left = 190
+      Height = 21
+      Top = 175
+      Width = 80
+      TabOrder = 1
+    end
+    object LbBrightness: TLabel
+      Left = 53
+      Height = 29
+      Top = 268
+      Width = 84
+      Caption = 'Brightness'
+      Layout = tlCenter
+      ParentColor = False
+    end
+    object SEBrightness: TSpinEdit
+      Left = 190
+      Height = 29
+      Top = 268
+      Width = 80
+      TabOrder = 2
+    end
+    object LbRGB: TLabel
+      Left = 53
+      Height = 20
+      Top = 369
+      Width = 84
+      Caption = 'Color'
+      Layout = tlCenter
+      ParentColor = False
+    end
+    object CBColor: TColorButton
+      Left = 190
+      Height = 20
+      Top = 369
+      Width = 80
+      BorderWidth = 2
+      ButtonColorSize = 16
+      ButtonColor = clBlack
+    end
+  end
+  object Splitter1: TSplitter
     Left = 312
     Height = 480
     Top = 0
-    Width = 328
-    Align = alClient
-    Caption = 'Bulb Properties'
-    TabOrder = 1
+    Width = 5
   end
 end

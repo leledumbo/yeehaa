@@ -13,6 +13,8 @@ uses
   Forms, formmain
   { you can add units after this };
 
+{$R *.res}
+
 begin
   RequireDerivedFormResource := True;
   Application.Scaled := True;
