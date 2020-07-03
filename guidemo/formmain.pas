@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  StdCtrls, Spin, syncobjs, fgl, Yeehaa;
+  StdCtrls, Spin, PairSplitter, syncobjs, fgl, fpjson, Yeehaa;
 
 type
 
@@ -15,19 +15,37 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
-    CBPoweredOn: TCheckBox;
-    CBColor: TColorButton;
-    EdModel: TEdit;
-    GBBulbList: TGroupBox;
-    LbModel: TLabel;
-    LbPoweredOn: TLabel;
-    LbBrightness: TLabel;
-    LbRGB: TLabel;
-    LBBulbList: TListBox;
-    GBBulbProps: TGroupBox;
     BClear: TButton;
+    CBColor: TColorButton;
+    CBPoweredOn: TCheckBox;
+    EdModel: TEdit;
+    EdName: TEdit;
+    GBBulbList: TGroupBox;
+    GBBulbProps: TGroupBox;
+    GBOptions: TGroupBox;
+    GBTransitionDuration: TGroupBox;
+    GBLog: TGroupBox;
+    LbBrightness: TLabel;
+    LBBulbList: TListBox;
+    LbModel: TLabel;
+    LbName: TLabel;
+    LbPoweredOn: TLabel;
+    LbRGB: TLabel;
+    MemoLog: TMemo;
+    PairSplitter1: TPairSplitter;
+    PairSplitter2: TPairSplitter;
+    PairSplitter3: TPairSplitter;
+    PairSplitterSide1: TPairSplitterSide;
+    PairSplitterSide2: TPairSplitterSide;
+    PairSplitterSide3: TPairSplitterSide;
+    PairSplitterSide4: TPairSplitterSide;
+    PairSplitterSide5: TPairSplitterSide;
+    PairSplitterSide6: TPairSplitterSide;
+    RGTransitionEffect: TRadioGroup;
     SEBrightness: TSpinEdit;
-    Splitter1: TSplitter;
+    SpEdTransitionDuration: TSpinEdit;
+    procedure CBPoweredOnChange(Sender: TObject);
+    procedure EdNameChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure BClearClick(Sender: TObject);
@@ -35,8 +53,12 @@ type
   private
     FYeeConn: TYeeConn;
     FBulbMap: TBulbMap;
+    FSelectedBulb: TBulbInfo;
     FCS: TCriticalSection;
+    FAutomaticStateChange: Boolean;
     procedure InsertBulb(const ANewBulb: TBulbInfo);
+    procedure LogCommandResult(const AID: Integer; AResult, AError: TJSONData);
+    procedure LogConnectionError(const AMsg: String);
   public
 
   end;
@@ -61,6 +83,8 @@ begin
 
   FYeeConn := TYeeConn.Create(ListenPort, BroadcastIntervalMillisecond);
   FYeeConn.OnBulbFound := @InsertBulb;
+  FYeeConn.OnCommandResult := @LogCommandResult;
+  FYeeConn.OnConnectionError := @LogConnectionError;
 
   FCS := TCriticalSection.Create;
 end;
@@ -70,6 +94,27 @@ begin
   FYeeConn.Free;
   FBulbMap.Free;
   FCS.Free;
+end;
+
+
+procedure TMainForm.CBPoweredOnChange(Sender: TObject);
+var
+  LTransitionEffect: TTransitionEfect;
+begin
+  if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
+    case RGTransitionEffect.ItemIndex of
+             0: LTransitionEffect := teSudden;
+      otherwise LTransitionEffect := teSmooth;
+    end;
+    FYeeConn.SetPower(FSelectedBulb.IP,CBPoweredOn.Checked,LTransitionEffect,SpEdTransitionDuration.Value);
+  end;
+end;
+
+procedure TMainForm.EdNameChange(Sender: TObject);
+begin
+  if LBBulbList.ItemIndex >= 0 then begin
+    FYeeConn.SetName(FSelectedBulb.IP,EdName.Text);
+  end;
 end;
 
 procedure TMainForm.BClearClick(Sender: TObject);
@@ -84,15 +129,20 @@ begin
 end;
 
 procedure TMainForm.LBBulbListSelectionChange(Sender: TObject; User: boolean);
-var
-  LBulb: TBulbInfo;
 begin
+  GBBulbProps.Enabled := true;
   try
-    LBulb := FBulbMap[LBBulbList.GetSelectedText];
-    EdModel.Text := LBulb.Model;
-    CBPoweredOn.Checked := LBulb.Power = 'on';
-    SEBrightness.Value := StrToIntDef(LBulb.Brightness,0);
-    CBColor.ButtonColor := TColor(StrToIntDef(LBulb.RGB,0));
+    FAutomaticStateChange := true;
+    try
+      FSelectedBulb := FBulbMap[LBBulbList.GetSelectedText];
+      EdModel.Text := FSelectedBulb.Model;
+      CBPoweredOn.Checked := FSelectedBulb.PoweredOn;
+      SEBrightness.Value := FSelectedBulb.BrightnessPercentage;
+      CBColor.ButtonColor := FSelectedBulb.RGB;
+      EdName.Text := FSelectedBulb.Name;
+    finally
+      FAutomaticStateChange := false;
+    end;
   except
      on e: EListError do ; // intentionally ignored
   end;
@@ -109,6 +159,18 @@ begin
       FCS.Leave;
     end;
   end;
+end;
+
+procedure TMainForm.LogCommandResult(const AID: Integer; AResult,
+  AError: TJSONData);
+begin
+  if Assigned(AResult) then MemoLog.Lines.Add('[Result] ' + AResult.AsJSON);
+  if Assigned(AError) then MemoLog.Lines.Add('[Error] ' + AError.AsJSON);
+end;
+
+procedure TMainForm.LogConnectionError(const AMsg: String);
+begin
+  MemoLog.Lines.Add('[Connection error] ' + AMsg);
 end;
 
 end.

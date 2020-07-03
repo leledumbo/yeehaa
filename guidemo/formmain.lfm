@@ -1,146 +1,332 @@
 object MainForm: TMainForm
   Left = 392
-  Height = 480
+  Height = 600
   Top = 30
-  Width = 640
+  Width = 800
   Caption = 'YeeHAA GUI Demo'
-  ClientHeight = 480
-  ClientWidth = 640
+  ClientHeight = 600
+  ClientWidth = 800
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   Position = poScreenCenter
-  object GBBulbList: TGroupBox
+  object PairSplitter1: TPairSplitter
+    Cursor = crVSplit
     Left = 0
-    Height = 480
+    Height = 600
     Top = 0
-    Width = 312
-    Align = alLeft
-    Caption = 'Bulb List'
-    ClientHeight = 460
-    ClientWidth = 310
-    TabOrder = 0
-    object LBBulbList: TListBox
-      AnchorSideLeft.Control = GBBulbList
-      AnchorSideTop.Control = GBBulbList
-      AnchorSideRight.Control = GBBulbList
-      AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = BClear
-      Left = 0
-      Height = 432
-      Top = 0
-      Width = 310
-      Align = alCustom
-      Anchors = [akTop, akLeft, akRight, akBottom]
-      ItemHeight = 0
-      OnSelectionChange = LBBulbListSelectionChange
-      ScrollWidth = 308
-      TabOrder = 0
-      TopIndex = -1
-    end
-    object BClear: TButton
-      AnchorSideTop.Control = LBBulbList
-      AnchorSideTop.Side = asrBottom
-      AnchorSideBottom.Control = GBBulbList
-      AnchorSideBottom.Side = asrBottom
-      Left = 118
-      Height = 28
-      Hint = 'Clears discovered bulb list'#10'Auto discovery will still run and repopulate the list shortly after'
-      Top = 432
-      Width = 75
-      Align = alCustom
-      Anchors = [akBottom]
-      Caption = 'Cl&ear'
-      OnClick = BClearClick
-      TabOrder = 1
-    end
-  end
-  object GBBulbProps: TGroupBox
-    Left = 317
-    Height = 480
-    Top = 0
-    Width = 323
+    Width = 800
     Align = alClient
-    Caption = 'Bulb Properties'
-    ChildSizing.EnlargeHorizontal = crsHomogenousSpaceResize
-    ChildSizing.EnlargeVertical = crsHomogenousSpaceResize
-    ChildSizing.ShrinkHorizontal = crsHomogenousSpaceResize
-    ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
-    ChildSizing.Layout = cclLeftToRightThenTopToBottom
-    ChildSizing.ControlsPerLine = 2
-    ClientHeight = 460
-    ClientWidth = 321
-    TabOrder = 1
-    object LbModel: TLabel
-      Left = 53
-      Height = 31
-      Top = 72
-      Width = 84
-      Caption = 'Model'
-      Layout = tlCenter
-      ParentColor = False
+    Position = 450
+    SplitterType = pstVertical
+    object PairSplitterSide1: TPairSplitterSide
+      Cursor = crArrow
+      Left = 0
+      Height = 450
+      Top = 0
+      Width = 800
+      ClientWidth = 800
+      ClientHeight = 450
+      object PairSplitter2: TPairSplitter
+        Left = 0
+        Height = 450
+        Top = 0
+        Width = 800
+        Align = alClient
+        Position = 320
+        object PairSplitterSide3: TPairSplitterSide
+          Cursor = crArrow
+          Left = 0
+          Height = 450
+          Top = 0
+          Width = 320
+          ClientWidth = 320
+          ClientHeight = 450
+          object GBBulbList: TGroupBox
+            Left = 0
+            Height = 450
+            Top = 0
+            Width = 320
+            Align = alClient
+            Caption = 'Bulb List'
+            ClientHeight = 430
+            ClientWidth = 318
+            TabOrder = 0
+            object LBBulbList: TListBox
+              AnchorSideLeft.Control = GBBulbList
+              AnchorSideTop.Control = GBBulbList
+              AnchorSideRight.Control = GBBulbList
+              AnchorSideRight.Side = asrBottom
+              AnchorSideBottom.Control = BClear
+              Left = 0
+              Height = 402
+              Top = 0
+              Width = 318
+              Align = alCustom
+              Anchors = [akTop, akLeft, akRight, akBottom]
+              ItemHeight = 0
+              OnSelectionChange = LBBulbListSelectionChange
+              ScrollWidth = 316
+              TabOrder = 0
+              TopIndex = -1
+            end
+            object BClear: TButton
+              AnchorSideTop.Control = LBBulbList
+              AnchorSideTop.Side = asrBottom
+              AnchorSideBottom.Control = GBBulbList
+              AnchorSideBottom.Side = asrBottom
+              Left = 122
+              Height = 28
+              Hint = 'Clears discovered bulb list'#10'Auto discovery will still run and repopulate the list shortly after'
+              Top = 402
+              Width = 75
+              Align = alCustom
+              Anchors = [akBottom]
+              Caption = 'Cl&ear'
+              OnClick = BClearClick
+              TabOrder = 1
+            end
+          end
+        end
+        object PairSplitterSide4: TPairSplitterSide
+          Cursor = crArrow
+          Left = 325
+          Height = 450
+          Top = 0
+          Width = 475
+          ClientWidth = 475
+          ClientHeight = 450
+          object PairSplitter3: TPairSplitter
+            Cursor = crVSplit
+            Left = 0
+            Height = 450
+            Top = 0
+            Width = 475
+            Align = alClient
+            Position = 360
+            SplitterType = pstVertical
+            object PairSplitterSide5: TPairSplitterSide
+              Cursor = crArrow
+              Left = 0
+              Height = 360
+              Top = 0
+              Width = 475
+              ClientWidth = 475
+              ClientHeight = 360
+              object GBBulbProps: TGroupBox
+                Left = 0
+                Height = 360
+                Top = 0
+                Width = 475
+                Align = alClient
+                Caption = 'Bulb Properties'
+                ChildSizing.EnlargeHorizontal = crsHomogenousSpaceResize
+                ChildSizing.EnlargeVertical = crsHomogenousSpaceResize
+                ChildSizing.ShrinkHorizontal = crsHomogenousSpaceResize
+                ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
+                ChildSizing.Layout = cclLeftToRightThenTopToBottom
+                ChildSizing.ControlsPerLine = 2
+                ClientHeight = 340
+                ClientWidth = 473
+                Enabled = False
+                TabOrder = 0
+                object LbModel: TLabel
+                  Left = 80
+                  Height = 31
+                  Top = 35
+                  Width = 84
+                  Caption = 'Model'
+                  Layout = tlCenter
+                  ParentColor = False
+                end
+                object EdModel: TEdit
+                  Left = 244
+                  Height = 31
+                  Top = 35
+                  Width = 150
+                  ReadOnly = True
+                  TabOrder = 0
+                end
+                object LbPoweredOn: TLabel
+                  Left = 80
+                  Height = 21
+                  Top = 101
+                  Width = 84
+                  Caption = 'Powered On?'
+                  Layout = tlCenter
+                  ParentColor = False
+                end
+                object CBPoweredOn: TCheckBox
+                  Left = 244
+                  Height = 21
+                  Top = 101
+                  Width = 150
+                  OnChange = CBPoweredOnChange
+                  TabOrder = 1
+                end
+                object LbBrightness: TLabel
+                  Left = 80
+                  Height = 29
+                  Top = 157
+                  Width = 84
+                  Caption = 'Brightness'
+                  Layout = tlCenter
+                  ParentColor = False
+                end
+                object SEBrightness: TSpinEdit
+                  Left = 244
+                  Height = 29
+                  Top = 157
+                  Width = 50
+                  Constraints.MaxWidth = 50
+                  TabOrder = 2
+                end
+                object LbRGB: TLabel
+                  Left = 80
+                  Height = 20
+                  Top = 221
+                  Width = 84
+                  Caption = 'Color'
+                  Layout = tlCenter
+                  ParentColor = False
+                end
+                object CBColor: TColorButton
+                  Left = 244
+                  Height = 20
+                  Top = 221
+                  Width = 150
+                  BorderWidth = 2
+                  ButtonColorSize = 16
+                  ButtonColor = clBlack
+                end
+                object LbName: TLabel
+                  Left = 80
+                  Height = 31
+                  Top = 276
+                  Width = 84
+                  Caption = 'Name'
+                  Layout = tlCenter
+                  ParentColor = False
+                end
+                object EdName: TEdit
+                  Left = 244
+                  Height = 31
+                  Top = 276
+                  Width = 150
+                  Constraints.MinWidth = 150
+                  OnChange = EdNameChange
+                  TabOrder = 3
+                end
+              end
+            end
+            object PairSplitterSide6: TPairSplitterSide
+              Cursor = crArrow
+              Left = 0
+              Height = 85
+              Top = 365
+              Width = 475
+              ClientWidth = 475
+              ClientHeight = 85
+              object GBOptions: TGroupBox
+                Left = 0
+                Height = 85
+                Top = 0
+                Width = 475
+                Align = alClient
+                Anchors = [akRight, akBottom]
+                Caption = 'Options'
+                ChildSizing.EnlargeHorizontal = crsHomogenousSpaceResize
+                ChildSizing.EnlargeVertical = crsHomogenousSpaceResize
+                ChildSizing.ShrinkHorizontal = crsHomogenousSpaceResize
+                ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
+                ChildSizing.Layout = cclTopToBottomThenLeftToRight
+                ChildSizing.ControlsPerLine = 1
+                ClientHeight = 65
+                ClientWidth = 473
+                TabOrder = 0
+                object RGTransitionEffect: TRadioGroup
+                  Left = 63
+                  Height = 49
+                  Top = 8
+                  Width = 158
+                  AutoFill = True
+                  Caption = 'Transition Effect'
+                  ChildSizing.LeftRightSpacing = 6
+                  ChildSizing.EnlargeHorizontal = crsHomogenousSpaceResize
+                  ChildSizing.EnlargeVertical = crsHomogenousSpaceResize
+                  ChildSizing.ShrinkHorizontal = crsHomogenousSpaceResize
+                  ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
+                  ChildSizing.Layout = cclLeftToRightThenTopToBottom
+                  ChildSizing.ControlsPerLine = 2
+                  ClientHeight = 29
+                  ClientWidth = 156
+                  Columns = 2
+                  Items.Strings = (
+                    'Sudden'
+                    'Smooth'
+                  )
+                  TabOrder = 0
+                end
+                object GBTransitionDuration: TGroupBox
+                  Left = 284
+                  Height = 49
+                  Top = 8
+                  Width = 128
+                  Caption = 'Transition Duration'
+                  ChildSizing.EnlargeHorizontal = crsHomogenousSpaceResize
+                  ChildSizing.EnlargeVertical = crsHomogenousSpaceResize
+                  ChildSizing.ShrinkHorizontal = crsHomogenousSpaceResize
+                  ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
+                  ChildSizing.Layout = cclLeftToRightThenTopToBottom
+                  ClientHeight = 29
+                  ClientWidth = 126
+                  TabOrder = 1
+                  object SpEdTransitionDuration: TSpinEdit
+                    Left = 26
+                    Height = 29
+                    Top = 0
+                    Width = 75
+                    Constraints.MinWidth = 75
+                    MaxValue = 10000
+                    MinValue = 30
+                    TabOrder = 0
+                    Value = 500
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
     end
-    object EdModel: TEdit
-      Left = 190
-      Height = 31
-      Top = 72
-      Width = 80
-      TabOrder = 0
+    object PairSplitterSide2: TPairSplitterSide
+      Cursor = crArrow
+      Left = 0
+      Height = 145
+      Top = 455
+      Width = 800
+      ClientWidth = 800
+      ClientHeight = 145
+      object GBLog: TGroupBox
+        Left = 0
+        Height = 145
+        Top = 0
+        Width = 800
+        Align = alClient
+        Caption = 'Log'
+        ClientHeight = 125
+        ClientWidth = 798
+        TabOrder = 0
+        object MemoLog: TMemo
+          Left = 0
+          Height = 125
+          Top = 0
+          Width = 798
+          Align = alClient
+          ReadOnly = True
+          ScrollBars = ssAutoVertical
+          TabOrder = 0
+        end
+      end
     end
-    object LbPoweredOn: TLabel
-      Left = 53
-      Height = 21
-      Top = 175
-      Width = 84
-      Caption = 'Powered On?'
-      Layout = tlCenter
-      ParentColor = False
-    end
-    object CBPoweredOn: TCheckBox
-      Left = 190
-      Height = 21
-      Top = 175
-      Width = 80
-      TabOrder = 1
-    end
-    object LbBrightness: TLabel
-      Left = 53
-      Height = 29
-      Top = 268
-      Width = 84
-      Caption = 'Brightness'
-      Layout = tlCenter
-      ParentColor = False
-    end
-    object SEBrightness: TSpinEdit
-      Left = 190
-      Height = 29
-      Top = 268
-      Width = 80
-      TabOrder = 2
-    end
-    object LbRGB: TLabel
-      Left = 53
-      Height = 20
-      Top = 369
-      Width = 84
-      Caption = 'Color'
-      Layout = tlCenter
-      ParentColor = False
-    end
-    object CBColor: TColorButton
-      Left = 190
-      Height = 20
-      Top = 369
-      Width = 80
-      BorderWidth = 2
-      ButtonColorSize = 16
-      ButtonColor = clBlack
-    end
-  end
-  object Splitter1: TSplitter
-    Left = 312
-    Height = 480
-    Top = 0
-    Width = 5
   end
 end
