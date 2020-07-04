@@ -112,7 +112,7 @@ end;
 
 procedure TMainForm.EdNameChange(Sender: TObject);
 begin
-  if LBBulbList.ItemIndex >= 0 then begin
+  if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
     FYeeConn.SetName(FSelectedBulb.IP,EdName.Text);
   end;
 end;

@@ -43,6 +43,11 @@
               </Win32>
             </Options>
           </Linking>
+          <Other>
+            <OtherDefines Count="1">
+              <Define0 Value="debug"/>
+            </OtherDefines>
+          </Other>
         </CompilerOptions>
       </Item2>
     </BuildModes>

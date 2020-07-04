@@ -9,8 +9,9 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   Position = poScreenCenter
+  LCLVersion = '2.0.8.0'
   object PairSplitter1: TPairSplitter
-    Cursor = crVSplit
+    Cursor = crDefault
     Left = 0
     Height = 600
     Top = 0
@@ -27,6 +28,7 @@ object MainForm: TMainForm
       ClientWidth = 800
       ClientHeight = 450
       object PairSplitter2: TPairSplitter
+        Cursor = crDefault
         Left = 0
         Height = 450
         Top = 0
@@ -96,7 +98,7 @@ object MainForm: TMainForm
           ClientWidth = 475
           ClientHeight = 450
           object PairSplitter3: TPairSplitter
-            Cursor = crVSplit
+            Cursor = crDefault
             Left = 0
             Height = 450
             Top = 0

@@ -161,7 +161,8 @@ procedure TYeeConn.SendCommand(const AIP: String; const AID: Integer;
 var
   LJSONMsg, LJSONResult: TJSONObject;
   LJSONParams: TJSONArray;
-  LRawResult: string;
+  LRawResult: String;
+  LJSONMSgStr: TJSONStringType;
 begin
   with TLTcp.Create(nil) do
     try
@@ -178,7 +179,8 @@ begin
         LJSONMsg := CreateJSONObject(['id',AID,'method',AMethod]);
         LJSONParams := CreateJSONArray(AParams);
         LJSONMsg['params'] := LJSONParams;
-        {$ifdef debug}WriteLn({$endif}SendMessage(LJSONMsg.AsJSON + #13#10){$ifdef debug}){$endif};
+        LJSONMSgStr := LJSONMsg.AsJSON;
+        {$ifdef debug}WriteLn('SendMessage (',{$endif}SendMessage(LJSONMSgStr + #13#10){$ifdef debug},'): ' + LJSONMSgStr){$endif};
 
         if Assigned(FOnCommandResult) then begin
           while GetMessage(LRawResult) <= 0 do CallAction;
