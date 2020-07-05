@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  StdCtrls, Spin, PairSplitter, JSONPropStorage, syncobjs, fgl, fpjson, Yeehaa;
+  StdCtrls, Spin, PairSplitter, JSONPropStorage, syncobjs, fgl,
+  fpjson, Yeehaa;
 
 type
 
@@ -15,6 +16,9 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    BRefresh: TButton;
+    BSelectAll: TButton;
+    BCopy: TButton;
     BClear: TButton;
     CBColor: TColorButton;
     CBPoweredOn: TCheckBox;
@@ -33,6 +37,7 @@ type
     LbPoweredOn: TLabel;
     LbRGB: TLabel;
     MemoLog: TMemo;
+    PMemoButtons: TPanel;
     PSBulbLog: TPairSplitter;
     PSBulbListProps: TPairSplitter;
     PSBulbPropsOpts: TPairSplitter;
@@ -43,13 +48,16 @@ type
     PairSplitterSide5: TPairSplitterSide;
     PairSplitterSide6: TPairSplitterSide;
     RGTransitionEffect: TRadioGroup;
-    SEBrightness: TSpinEdit;
+    SpEdBrightness: TSpinEdit;
     SpEdTransitionDuration: TSpinEdit;
+    procedure BClearClick(Sender: TObject);
+    procedure BCopyClick(Sender: TObject);
+    procedure BSelectAllClick(Sender: TObject);
     procedure CBPoweredOnChange(Sender: TObject);
     procedure EdNameChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure BClearClick(Sender: TObject);
+    procedure BRefreshClick(Sender: TObject);
     procedure LBBulbListSelectionChange(Sender: TObject; User: boolean);
   private
     FYeeConn: TYeeConn;
@@ -111,6 +119,21 @@ begin
   end;
 end;
 
+procedure TMainForm.BSelectAllClick(Sender: TObject);
+begin
+  MemoLog.SelectAll;
+end;
+
+procedure TMainForm.BCopyClick(Sender: TObject);
+begin
+  MemoLog.CopyToClipboard;
+end;
+
+procedure TMainForm.BClearClick(Sender: TObject);
+begin
+  MemoLog.Clear;
+end;
+
 procedure TMainForm.EdNameChange(Sender: TObject);
 begin
   if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
@@ -118,7 +141,7 @@ begin
   end;
 end;
 
-procedure TMainForm.BClearClick(Sender: TObject);
+procedure TMainForm.BRefreshClick(Sender: TObject);
 begin
   FCS.Enter;
   try
@@ -138,7 +161,7 @@ begin
       FSelectedBulb := FBulbMap[LBBulbList.GetSelectedText];
       EdModel.Text := FSelectedBulb.Model;
       CBPoweredOn.Checked := FSelectedBulb.PoweredOn;
-      SEBrightness.Value := FSelectedBulb.BrightnessPercentage;
+      SpEdBrightness.Value := FSelectedBulb.BrightnessPercentage;
       CBColor.ButtonColor := FSelectedBulb.RGB;
       EdName.Text := FSelectedBulb.Name;
     finally
