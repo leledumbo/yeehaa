@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  StdCtrls, Spin, PairSplitter, syncobjs, fgl, fpjson, Yeehaa;
+  StdCtrls, Spin, PairSplitter, JSONPropStorage, syncobjs, fgl, fpjson, Yeehaa;
 
 type
 
@@ -25,6 +25,7 @@ type
     GBOptions: TGroupBox;
     GBTransitionDuration: TGroupBox;
     GBLog: TGroupBox;
+    ConfigStorage: TJSONPropStorage;
     LbBrightness: TLabel;
     LBBulbList: TListBox;
     LbModel: TLabel;
@@ -32,9 +33,9 @@ type
     LbPoweredOn: TLabel;
     LbRGB: TLabel;
     MemoLog: TMemo;
-    PairSplitter1: TPairSplitter;
-    PairSplitter2: TPairSplitter;
-    PairSplitter3: TPairSplitter;
+    PSBulbLog: TPairSplitter;
+    PSBulbListProps: TPairSplitter;
+    PSBulbPropsOpts: TPairSplitter;
     PairSplitterSide1: TPairSplitterSide;
     PairSplitterSide2: TPairSplitterSide;
     PairSplitterSide3: TPairSplitterSide;
@@ -150,14 +151,13 @@ end;
 
 procedure TMainForm.InsertBulb(const ANewBulb: TBulbInfo);
 begin
-  if FBulbMap.IndexOf(ANewBulb.IP) < 0 then begin
-    FCS.Enter;
-    try
-      FBulbMap[ANewBulb.IP] := ANewBulb;
+  FCS.Enter;
+  try
+    if FBulbMap.IndexOf(ANewBulb.IP) < 0 then
       LBBulbList.Items.Add(ANewBulb.IP);
-    finally
-      FCS.Leave;
-    end;
+    FBulbMap[ANewBulb.IP] := ANewBulb;
+  finally
+    FCS.Leave;
   end;
 end;
 
