@@ -2,4 +2,4 @@ Steps:
 
 1. Build libyeehaalib.so in upper folder first!
 2. Simply execute make to bold compile and run, take a look inside the Makefile to know how to execute
-   Note that the Makefile is tailored for Linux environment, but the code itself should be fairly portable at least between Windows and Linux, feel free to add how other OSes do sleep/delay
+   Note that the Makefile is tailored for Linux environment, but the code itself should be fairly portable at least between Windows and Linux
