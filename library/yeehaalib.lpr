@@ -6,6 +6,7 @@ library yeehaalib;
 uses
   cthreads,
   SysUtils,
+  Strings,
   ctypes,
   fpjson,
   fgl,
@@ -31,13 +32,13 @@ type
   PValue = ^TValue;
 
   TCommandResult = record
-    IsError: Boolean;
+    IsError: cbool;
     ValueCount: cint32;
     Values: PValue;
   end;
 
   TBulbFoundCallback       = procedure (constref ANewBulb: TBulbData); cdecl;
-  TCommandResultCallback   = procedure (const AID: Integer; constref AResult: TCommandResult); cdecl;
+  TCommandResultCallback   = procedure (const AID: cint32; constref AResult: TCommandResult); cdecl;
   TConnectionErrorCallback = procedure (const AMsg: PChar); cdecl;
 
   { TYeeBroker }
@@ -78,10 +79,12 @@ procedure TYeeBroker.HandleCommandResult(const AID: Integer; AResult,
   AError: TJSONData);
 var
   LCommandResult: TCommandResult;
+  i: Integer;
 
   procedure DecodeCommandResult(ACmdResult: TJSONData);
   var
     i: Integer;
+    s: String;
     LValue: TValue;
     LData: TJSONData;
     LResultObj: TJSONObject;
@@ -94,13 +97,21 @@ var
         LCommandResult.Values := GetMem(LCommandResult.ValueCount * SizeOf(TValue));
         for i := 0 to LCommandResult.ValueCount - 1 do begin
           LData := LResultArr[i];
+          Str(i,s);
+          LValue.Key := StrAlloc(Length(s) + 1);
+          StrPCopy(LValue.Key, s);
 
           case LData.JSONType of
-            jtString: LValue.StrValue := PChar(LData.AsString);
-            jtNumber: LValue.IntValue := LData.AsInteger;
+            jtString: begin
+              LValue.ValueType := vtString;
+              LValue.StrValue := PChar(LData.AsString);
+            end;
+            jtNumber: begin
+              LValue.ValueType := vtInteger;
+              LValue.IntValue := LData.AsInteger;
+            end;
             otherwise raise Exception.CreateFmt('Command Result[%d]: unexpected JSON type "%s"',[i,AResult.JSONType]);
           end;
-
           LCommandResult.Values[i] := LValue;
         end;
       end;
@@ -110,13 +121,21 @@ var
         LCommandResult.Values := GetMem(LCommandResult.ValueCount * SizeOf(TValue));
         for i := 0 to LCommandResult.ValueCount - 1 do begin
           LData := LResultObj.Items[i];
-          LValue.Key := PChar(LResultObj.Names[i]);
+          LValue.Key := StrAlloc(Length(LResultObj.Names[i]) + 1);
+          StrPCopy(LValue.Key, LResultObj.Names[i]);
 
           case LData.JSONType of
-            jtString: LValue.StrValue := PChar(LData.AsString);
-            jtNumber: LValue.IntValue := LData.AsInteger;
+            jtString: begin
+              LValue.ValueType := vtString;
+              LValue.StrValue := PChar(LData.AsString);
+            end;
+            jtNumber: begin
+              LValue.ValueType := vtInteger;
+              LValue.IntValue := LData.AsInteger;
+            end;
             otherwise raise Exception.CreateFmt('Command Result[%d]: unexpected JSON type "%s"',[i,AResult.JSONType]);
           end;
+          writeln(LValue.ValueType);
 
           LCommandResult.Values[i] := LValue;
         end;
@@ -132,6 +151,8 @@ begin
     if Assigned(AResult) then DecodeCommandResult(AResult);
     if Assigned(AError) then DecodeCommandResult(AError);
     FOnCommandResult(AID,LCommandResult);
+    for i := 0 to LCommandResult.ValueCount - 1 do
+      StrDispose(LCommandResult.Values[i].Key);
     FreeMem(LCommandResult.Values);
   end;
 end;
@@ -156,6 +177,8 @@ begin
   FConn.Free;
   inherited Destroy;
 end;
+
+{ exported APIs }
 
 function InitializeConnection(const AListenPort: cuint16; const ABroadcastIntervalMillisecond: cint32): TYeeBroker; cdecl;
 begin
@@ -182,7 +205,7 @@ begin
   ABroker.OnCommandResult := ACallbackEvent;
 end;
 
-procedure SetPower(const ABroker: TYeeBroker; const AIP: PChar; const AIsOn: Boolean; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration); cdecl;
+procedure SetPower(const ABroker: TYeeBroker; const AIP: PChar; const AIsOn: cbool; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration); cdecl;
 begin
   ABroker.Conn.SetPower(String(AIP),AIsOn,ATransitionEfect,ATransitionDuration);
 end;

@@ -1,34 +1,50 @@
 #include <stdio.h>
+#include <string.h>
 #include "yeehaalib.h"
 
-#ifdef __linux__
-#include <unistd.h>
-#endif
+yeeconn_t* yc;
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
+void print_bulb_found(bulb_data_t *bulb) {
+  printf(
+    "ip=%s,model=%s,powered_on=%s,brightness=%d,rgb=%d\n",
+    bulb->ip,bulb->model,bulb->powered_on ? "true" : "false",bulb->brightness_percentage,bulb->rgb
+  );
+  // this will toggle your bulb like crazy!
+  SetPower(yc, bulb->ip, !bulb->powered_on, TRANSITION_EFFECT_SMOOTH, 1000);
+}
+
+void print_command_result(int32_t id,command_result_t *result) {
+  char buf[255];
+
+  sprintf(buf,"command_result=%s",result->is_error ? "failed" : "success");
+  for (int i = 0; i < result->value_count; i++) {
+    value_t *v = &result->values[i];
+    int      n = strlen(buf);
+
+    sprintf(&buf[n],",%s=",v->key);
+
+    n = strlen(buf);
+    switch (v->value_type) {
+      case VALUE_TYPE_INTEGER:
+        sprintf(&buf[n],"%d",v->int_value);
+        break;
+      case VALUE_TYPE_STRING:
+        sprintf(&buf[n],"%s",v->str_value);
+        break;
+      default:
+        fprintf(stderr,"It cannot be! %d\n",v->value_type);
+    }
+  }
+  printf("%s\n", buf);
+}
 
 int main() {
-  yeeconn_t* yc = InitializeConnection(9999, 100);
+  yc = InitializeConnection(9999, 1000);
 
-  puts("Waiting for the bulbs to be discovered...");
+  RegisterOnBulbFoundCallback(yc, print_bulb_found);
+  RegisterOnCommandResultCallback(yc, print_command_result);
+  getchar();
 
-  // wait for 2 seconds, hoping all the bulbs have been registered
-#ifdef __linux__
-  usleep(2000000);
-#endif
-#ifdef _WIN32
-  Sleep(2000);
-#endif
-
-  bulbinfolist_t *bil = GetBulbInfos(yc);
-  for (int i = 0; i < bil->count; i++) {
-    bulbinfo_t *bi = &bil->data[i];
-    printf("%d: ip=%s,model=%s,power=%s,brightness=%s,rgb=%s\n", i + 1, bi->ip, bi->model, bi->power, bi->brightness, bi->rgb);
-  }
-
-  FreeBulbInfos(bil);
   FinalizeConnection(yc);
   return 0;
 }
