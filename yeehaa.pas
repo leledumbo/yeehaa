@@ -17,6 +17,7 @@ type
 
   TPercentage = 1 .. 100;
   TRGBRange = -$7FFFFFFF-1 .. $7FFFFFFF;
+  TColorMode = (cmRGB := 1,cmCT,cmHSV);
 
   TBulbInfo = record
     ID: String;
@@ -24,6 +25,7 @@ type
     Model: String;
     PoweredOn: Boolean;
     BrightnessPercentage: TPercentage;
+    ColorMode: TColorMode;
     RGB: TRGBRange;
     Name: String;
   end;
@@ -35,6 +37,7 @@ type
   TTransitionEfect    = (teSmooth,teSudden);
   TColorTemperature   = 1700 .. 6500;
   TTransitionDuration = 30 .. 10000; // 10 second should be fairly long, I guess
+  TPowerColorMode = (pcmDefault,pcmCT,pcmRGB,pcmHSV,pcmColorFlow,pcmNightLight);
 
   { TYeeConn }
 
@@ -55,8 +58,11 @@ type
       const ABroadcastIntervalMillisecond: Integer = DefaultBroadcastIntervalMilliSeconds);
     destructor Destroy; override;
     procedure SetName(const AIP, AName: String);
-    procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration);
+    procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
     procedure SetColorTemperature(const AIP: String; const AColorTemperature: TColorTemperature; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration);
+    procedure SetRGB(const AIP: String; const ARGB: TRGBRange;
+      const ATransitionEfect: TTransitionEfect;
+  const ATransitionDuration: TTransitionDuration);
     property OnConnectionError: TConnectionErrorEvent write FConnectionError;
     property OnBulbFound: TBulbFoundEvent write FOnBulbFound;
     property OnCommandResult: TCommandResultEvent write FOnCommandResult;
@@ -136,14 +142,15 @@ begin
         LValue := Copy(LResponseLine,LColonPos + 2,Length(LResponseLine) - LColonPos + 2);
 
         case LKey of
-          'id'      : LBulbInfo.ID                   := LValue;
+          'id'        : LBulbInfo.ID                   := LValue;
           // strip away protocol and port, only address is required
-          'Location': LBulbInfo.IP                   := Copy(LValue,12,Length(LValue) - 17);
-          'model'   : LBulbInfo.Model                := LValue;
-          'power'   : LBulbInfo.PoweredOn            := LValue = 'on';
-          'bright'  : LBulbInfo.BrightnessPercentage := StrToIntDef(LValue,1);
-          'rgb'     : LBulbInfo.RGB                  := TRGBRange(StrToIntDef(LValue,1));
-          'name'    : LBulbInfo.Name                 := LValue;
+          'Location'  : LBulbInfo.IP                   := Copy(LValue,12,Length(LValue) - 17);
+          'model'     : LBulbInfo.Model                := LValue;
+          'power'     : LBulbInfo.PoweredOn            := LValue = 'on';
+          'bright'    : LBulbInfo.BrightnessPercentage := StrToIntDef(LValue,1);
+          'color_mode': LBulbInfo.ColorMode            := TColorMode(StrToIntDef(LValue,2));
+          'rgb'       : LBulbInfo.RGB                  := TRGBRange(StrToIntDef(LValue,1));
+          'name'      : LBulbInfo.Name                 := LValue;
         end;
       end;
     end;
@@ -240,7 +247,8 @@ end;
 
 procedure TYeeConn.SetPower(const AIP: String; const AIsOn: Boolean;
   const ATransitionEfect: TTransitionEfect;
-  const ATransitionDuration: TTransitionDuration);
+  const ATransitionDuration: TTransitionDuration;
+  const AColorMode: TPowerColorMode);
 var
   LPowerStateStr,LTransitionEfectStr: String;
 begin
@@ -252,7 +260,7 @@ begin
     teSmooth: LTransitionEfectStr := 'smooth';
     teSudden: LTransitionEfectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_power',[LPowerStateStr,LTransitionEfectStr,ATransitionDuration]);
+  SendCommand(AIP,1,'set_power',[LPowerStateStr,LTransitionEfectStr,ATransitionDuration,Ord(AColorMode)]);
 end;
 
 procedure TYeeConn.SetColorTemperature(const AIP: String;
@@ -267,6 +275,19 @@ begin
     teSudden: LTransitionEfectStr := 'sudden';
   end;
   SendCommand(AIP,1,'set_ct_abx',[AColorTemperature,LTransitionEfectStr,ATransitionDuration]);
+end;
+
+procedure TYeeConn.SetRGB(const AIP: String; const ARGB: TRGBRange;
+  const ATransitionEfect: TTransitionEfect;
+  const ATransitionDuration: TTransitionDuration);
+var
+  LTransitionEfectStr: String;
+begin
+  case ATransitionEfect of
+    teSmooth: LTransitionEfectStr := 'smooth';
+    teSudden: LTransitionEfectStr := 'sudden';
+  end;
+  SendCommand(AIP,1,'set_rgb',[ARGB,LTransitionEfectStr,ATransitionDuration]);
 end;
 
 end.
