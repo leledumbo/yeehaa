@@ -170,6 +170,8 @@ var
   LJSONParams: TJSONArray;
   LRawResult: String;
   LJSONMSgStr: TJSONStringType;
+  LJSONID: TJSONData;
+  LCmdID: Integer;
 begin
   with TLTcp.Create(nil) do
     try
@@ -193,7 +195,9 @@ begin
           while GetMessage(LRawResult) <= 0 do CallAction;
           {$ifdef debug}WriteLn('ResultReceived: ' + LRawResult);{$endif}
           LJSONResult := TJSONObject(GetJSON(LRawResult));
-          FOnCommandResult(LJSONResult['id'].AsInteger,LJSONResult.FindPath('result'),LJSONResult.FindPath('error'));
+          LJSONID := LJSONResult.FindPath('id');
+          if Assigned(LJSONID) then LCmdID := LJSONID.AsInteger else LCmdID := -1;
+          FOnCommandResult(LCmdID,LJSONResult.FindPath('result'),LJSONResult.FindPath('error'));
         end;
       end;
     finally
