@@ -8,7 +8,8 @@ uses
   Classes, SysUtils, StreamIO,
   fpjson,
   jsonparser,
-  lNet;
+  lNet,
+  Graphics;
 
 const
   DefaultBroadcastIntervalMilliSeconds = 100;
@@ -18,6 +19,7 @@ type
   TPercentage = 1 .. 100;
   TRGBRange = -$7FFFFFFF-1 .. $7FFFFFFF;
   TColorMode = (cmRGB := 1,cmCT,cmHSV);
+  TColorTemperature   = 1700 .. 6500;
 
   TBulbInfo = record
     ID: String;
@@ -27,6 +29,7 @@ type
     BrightnessPercentage: TPercentage;
     ColorMode: TColorMode;
     RGB: TRGBRange;
+    CT: TColorTemperature;
     Name: String;
   end;
 
@@ -35,7 +38,6 @@ type
   TCommandResultEvent   = procedure (const AID: Integer; AResult,AError: TJSONData) of object;
 
   TTransitionEfect    = (teSmooth,teSudden);
-  TColorTemperature   = 1700 .. 6500;
   TTransitionDuration = 30 .. 10000; // 10 second should be fairly long, I guess
   TPowerColorMode = (pcmDefault,pcmCT,pcmRGB,pcmHSV,pcmColorFlow,pcmNightLight);
 
@@ -59,6 +61,7 @@ type
     destructor Destroy; override;
     procedure SetName(const AIP, AName: String);
     procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
+    procedure SetBrightness(const AIP: String; const ABrightness: TPercentage; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
     procedure SetColorTemperature(const AIP: String; const AColorTemperature: TColorTemperature; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration);
     procedure SetRGB(const AIP: String; const ARGB: TRGBRange;
       const ATransitionEfect: TTransitionEfect;
@@ -67,6 +70,8 @@ type
     property OnBulbFound: TBulbFoundEvent write FOnBulbFound;
     property OnCommandResult: TCommandResultEvent write FOnCommandResult;
   end;
+
+function RGBToTColor(ARGB: Longint): TColor;
 
 implementation
 
@@ -93,6 +98,11 @@ type
     constructor Create(AConn: TLUdp; ABroadcastIntervalMillisecond: Integer = DefaultBroadcastIntervalMilliSeconds);
     procedure Execute; override;
   end;
+
+function RGBToTColor(ARGB: Longint): TColor;
+begin
+  Result := BEtoN(RGBToColor(Red(ARGB),Green(ARGB),Blue(ARGB))) shr 8;
+end;
 
 { TBroadcastThread }
 
@@ -151,6 +161,7 @@ begin
           'color_mode': LBulbInfo.ColorMode            := TColorMode(StrToIntDef(LValue,2));
           'rgb'       : LBulbInfo.RGB                  := TRGBRange(StrToIntDef(LValue,1));
           'name'      : LBulbInfo.Name                 := LValue;
+          'ct'        : LBulbInfo.CT                   := TColorTemperature(StrToIntDef(LValue,1));
         end;
       end;
     end;
@@ -267,6 +278,20 @@ begin
   SendCommand(AIP,1,'set_power',[LPowerStateStr,LTransitionEfectStr,ATransitionDuration,Ord(AColorMode)]);
 end;
 
+procedure TYeeConn.SetBrightness(const AIP: String;
+  const ABrightness: TPercentage; const ATransitionEfect: TTransitionEfect;
+  const ATransitionDuration: TTransitionDuration;
+  const AColorMode: TPowerColorMode);
+var
+  LTransitionEfectStr: String;
+begin
+  case ATransitionEfect of
+    teSmooth: LTransitionEfectStr := 'smooth';
+    teSudden: LTransitionEfectStr := 'sudden';
+  end;
+  SendCommand(AIP,1,'set_bright',[ABrightness,LTransitionEfectStr,ATransitionDuration]);
+end;
+
 procedure TYeeConn.SetColorTemperature(const AIP: String;
   const AColorTemperature: TColorTemperature;
   const ATransitionEfect: TTransitionEfect;
@@ -291,7 +316,7 @@ begin
     teSmooth: LTransitionEfectStr := 'smooth';
     teSudden: LTransitionEfectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_rgb',[ARGB,LTransitionEfectStr,ATransitionDuration]);
+  SendCommand(AIP,1,'set_rgb',[NtoBE(ColorToRGB(ARGB)) shr 8,LTransitionEfectStr,ATransitionDuration]);
 end;
 
 end.
