@@ -23,6 +23,8 @@ application in Pascal, of course.
 * Set name
 * Set power state
 * Set color temperature
+* Set color RGB
+* Set brightness
 
 ### To do
 * The rest of available commands
