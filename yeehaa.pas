@@ -165,7 +165,6 @@ begin
         end;
       end;
     end;
-    CloseFile(LRawResponseText);
     LRawResponseStream.Free;
 
     if Assigned(FOnBulbFound) then FOnBulbFound(LBulbInfo);
