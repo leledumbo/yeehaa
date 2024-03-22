@@ -8,3 +8,5 @@
 /library/ctest/yeehaalibtest
 /guidemo/yeehaagui
 /guidemo/lib/*
+/androiddemo/.gradle
+/androiddemo/build
