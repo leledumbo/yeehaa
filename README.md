@@ -58,6 +58,10 @@ Contain a demo CLI project that uses the unit directly
 
 Contain a demo GUI project that uses the unit directly
 
+### androiddemo
+
+Contain a demo Android project that uses the unit directly
+
 ---
 
 ## Technical Details
