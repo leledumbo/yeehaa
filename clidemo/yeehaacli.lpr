@@ -2,12 +2,13 @@ program yeehaacli;
 
 {$mode objfpc}{$H+}
 
-uses
-  cthreads,
-  SysUtils,
-  fpjson,
-  fgl,
-  Yeehaa;
+uses cthreads
+    ,SysUtils
+    ,fpjson
+    ,fgl
+    ,yeehaa.synapse
+    // ,yeehaa.lnet // uncomment to use lnet backend
+    ;
 
 const
   ListenPort = 9999;

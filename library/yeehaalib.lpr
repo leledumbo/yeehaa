@@ -3,14 +3,15 @@ library yeehaalib;
 {$mode objfpc}{$H+}
 {$packrecords c}
 
-uses
-  cthreads,
-  SysUtils,
-  Strings,
-  ctypes,
-  fpjson,
-  fgl,
-  Yeehaa;
+uses cthreads
+    ,SysUtils
+    ,Strings
+    ,ctypes
+    ,fpjson
+    ,fgl
+    ,yeehaa.synapse
+    //,yeehaa.lnet // uncomment to use lnet backend
+  ;
 
 type
 

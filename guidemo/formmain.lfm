@@ -1,16 +1,16 @@
 object MainForm: TMainForm
   Left = 392
-  Height = 675
+  Height = 600
   Top = 30
-  Width = 900
+  Width = 800
   Caption = 'YeeHAA GUI Demo'
-  ClientHeight = 675
-  ClientWidth = 900
-  DesignTimePPI = 108
+  ClientHeight = 600
+  ClientWidth = 800
+  Position = poScreenCenter
+  SessionProperties = 'Height;Left;PSBulbListProps.Position;PSBulbLog.Position;PSBulbPropsOpts.Position;RGTransitionEffect.ItemIndex;SpEdBrightness.Value;Top;Width;WindowState'
+  LCLVersion = '4.0.0.1'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  Position = poScreenCenter
-  SessionProperties = 'Height;Left;PSBulbListProps.Position;PSBulbLog.Position;PSBulbPropsOpts.Position;RGTransitionEffect.ItemIndex;Top;Width;WindowState;SpEdBrightness.Value'
   object PSBulbLog: TPairSplitter
     Cursor = crDefault
     Left = 0
@@ -23,11 +23,11 @@ object MainForm: TMainForm
     object PairSplitterSide1: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 400
+      Height = 356
       Top = 0
-      Width = 900
-      ClientWidth = 900
-      ClientHeight = 400
+      Width = 800
+      ClientWidth = 800
+      ClientHeight = 356
       object PSBulbListProps: TPairSplitter
         Cursor = crDefault
         Left = 0
@@ -39,11 +39,11 @@ object MainForm: TMainForm
         object PairSplitterSide3: TPairSplitterSide
           Cursor = crArrow
           Left = 0
-          Height = 400
+          Height = 356
           Top = 0
-          Width = 400
-          ClientWidth = 400
-          ClientHeight = 400
+          Width = 356
+          ClientWidth = 356
+          ClientHeight = 356
           object GBBulbList: TGroupBox
             Left = 0
             Height = 400
@@ -51,8 +51,8 @@ object MainForm: TMainForm
             Width = 400
             Align = alClient
             Caption = 'Bulb List'
-            ClientHeight = 374
-            ClientWidth = 396
+            ClientHeight = 382
+            ClientWidth = 398
             ParentFont = False
             TabOrder = 0
             object LBBulbList: TListBox
@@ -67,11 +67,11 @@ object MainForm: TMainForm
               Width = 378
               Align = alCustom
               Anchors = [akTop, akLeft, akRight, akBottom]
-              BorderSpacing.Around = 9
+              BorderSpacing.Around = 8
               ItemHeight = 0
-              OnSelectionChange = LBBulbListSelectionChange
               ParentFont = False
               TabOrder = 0
+              OnSelectionChange = LBBulbListSelectionChange
             end
             object BRefresh: TButton
               AnchorSideTop.Control = LBBulbList
@@ -86,22 +86,22 @@ object MainForm: TMainForm
               Align = alCustom
               Anchors = [akBottom]
               AutoSize = True
-              BorderSpacing.Around = 9
+              BorderSpacing.Around = 8
               Caption = '&Refresh'
-              OnClick = BRefreshClick
               ParentFont = False
               TabOrder = 1
+              OnClick = BRefreshClick
             end
           end
         end
         object PairSplitterSide4: TPairSplitterSide
           Cursor = crArrow
-          Left = 405
-          Height = 400
+          Left = 360
+          Height = 356
           Top = 0
-          Width = 495
-          ClientWidth = 495
-          ClientHeight = 400
+          Width = 440
+          ClientWidth = 440
+          ClientHeight = 356
           object PSBulbPropsOpts: TPairSplitter
             Cursor = crDefault
             Left = 0
@@ -114,11 +114,11 @@ object MainForm: TMainForm
             object PairSplitterSide5: TPairSplitterSide
               Cursor = crArrow
               Left = 0
-              Height = 290
+              Height = 258
               Top = 0
-              Width = 495
-              ClientWidth = 495
-              ClientHeight = 290
+              Width = 440
+              ClientWidth = 440
+              ClientHeight = 258
               object GBBulbProps: TGroupBox
                 Left = 0
                 Height = 290
@@ -132,15 +132,15 @@ object MainForm: TMainForm
                 ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
                 ChildSizing.Layout = cclLeftToRightThenTopToBottom
                 ChildSizing.ControlsPerLine = 2
-                ClientHeight = 264
-                ClientWidth = 491
+                ClientHeight = 272
+                ClientWidth = 493
                 Enabled = False
                 ParentFont = False
                 TabOrder = 0
                 object LbModel: TLabel
-                  Left = 75
+                  Left = 67
                   Height = 28
-                  Top = 16
+                  Top = 14
                   Width = 97
                   Caption = 'Model'
                   Layout = tlCenter
@@ -148,18 +148,18 @@ object MainForm: TMainForm
                   ParentFont = False
                 end
                 object EdModel: TEdit
-                  Left = 247
+                  Left = 220
                   Height = 28
-                  Top = 16
-                  Width = 169
+                  Top = 14
+                  Width = 150
                   ParentFont = False
                   ReadOnly = True
                   TabOrder = 0
                 end
                 object LbPoweredOn: TLabel
-                  Left = 75
+                  Left = 67
                   Height = 22
-                  Top = 60
+                  Top = 53
                   Width = 97
                   Caption = 'Powered On?'
                   Layout = tlCenter
@@ -167,18 +167,18 @@ object MainForm: TMainForm
                   ParentFont = False
                 end
                 object CBPoweredOn: TCheckBox
-                  Left = 247
+                  Left = 220
                   Height = 22
-                  Top = 60
+                  Top = 53
                   Width = 169
-                  OnChange = CBPoweredOnChange
                   ParentFont = False
                   TabOrder = 1
+                  OnChange = CBPoweredOnChange
                 end
                 object LbBrightness: TLabel
-                  Left = 75
+                  Left = 67
                   Height = 27
-                  Top = 98
+                  Top = 87
                   Width = 97
                   Caption = 'Brightness'
                   Layout = tlCenter
@@ -186,21 +186,21 @@ object MainForm: TMainForm
                   ParentFont = False
                 end
                 object SpEdBrightness: TSpinEdit
-                  Left = 247
+                  Left = 220
                   Height = 27
-                  Top = 98
-                  Width = 66
-                  Constraints.MaxWidth = 66
+                  Top = 87
+                  Width = 59
+                  Constraints.MaxWidth = 59
                   MinValue = 1
-                  OnChange = SpEdBrightnessChange
                   ParentFont = False
                   TabOrder = 2
                   Value = 1
+                  OnChange = SpEdBrightnessChange
                 end
                 object LbRGB: TLabel
-                  Left = 75
+                  Left = 67
                   Height = 22
-                  Top = 141
+                  Top = 125
                   Width = 97
                   Caption = 'Color'
                   Layout = tlCenter
@@ -208,21 +208,21 @@ object MainForm: TMainForm
                   ParentFont = False
                 end
                 object CBColor: TColorButton
-                  Left = 247
-                  Height = 22
-                  Top = 141
-                  Width = 84
+                  Left = 220
+                  Height = 20
+                  Top = 125
+                  Width = 75
                   BorderWidth = 2
-                  ButtonColorSize = 16
+                  ButtonColorSize = 14
                   ButtonColor = clBlack
-                  Constraints.MaxWidth = 84
+                  Constraints.MaxWidth = 75
                   OnColorChanged = CBColorColorChanged
                   ParentFont = False
                 end
                 object LbName: TLabel
-                  Left = 75
+                  Left = 67
                   Height = 28
-                  Top = 179
+                  Top = 159
                   Width = 97
                   Caption = 'Name'
                   Layout = tlCenter
@@ -230,47 +230,47 @@ object MainForm: TMainForm
                   ParentFont = False
                 end
                 object EdName: TEdit
-                  Left = 247
+                  Left = 220
                   Height = 28
-                  Top = 179
-                  Width = 169
-                  Constraints.MinWidth = 169
-                  OnChange = EdNameChange
+                  Top = 159
+                  Width = 150
+                  Constraints.MinWidth = 150
                   ParentFont = False
                   TabOrder = 3
+                  OnChange = EdNameChange
                 end
                 object LbTemperature: TLabel
-                  Left = 75
+                  Left = 67
                   Height = 27
-                  Top = 223
+                  Top = 198
                   Width = 97
                   Caption = 'Temperature'
                   Layout = tlCenter
                   ParentColor = False
                 end
                 object SpEdTemperature: TSpinEdit
-                  Left = 247
+                  Left = 220
                   Height = 27
-                  Top = 223
-                  Width = 66
-                  Constraints.MaxWidth = 66
+                  Top = 198
+                  Width = 59
+                  Constraints.MaxWidth = 59
                   MaxValue = 6500
                   MinValue = 1700
-                  OnChange = SpEdTemperatureChange
                   ParentFont = False
                   TabOrder = 4
                   Value = 1700
+                  OnChange = SpEdTemperatureChange
                 end
               end
             end
             object PairSplitterSide6: TPairSplitterSide
               Cursor = crArrow
               Left = 0
-              Height = 105
-              Top = 295
-              Width = 495
-              ClientWidth = 495
-              ClientHeight = 105
+              Height = 93
+              Top = 262
+              Width = 440
+              ClientWidth = 440
+              ClientHeight = 93
               object GBOptions: TGroupBox
                 Left = 0
                 Height = 105
@@ -285,15 +285,15 @@ object MainForm: TMainForm
                 ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
                 ChildSizing.Layout = cclTopToBottomThenLeftToRight
                 ChildSizing.ControlsPerLine = 1
-                ClientHeight = 79
-                ClientWidth = 491
+                ClientHeight = 87
+                ClientWidth = 493
                 ParentFont = False
                 TabOrder = 0
                 object RGTransitionEffect: TRadioGroup
-                  Left = 51
-                  Height = 78
+                  Left = 45
+                  Height = 69
                   Top = 1
-                  Width = 177
+                  Width = 157
                   AutoFill = True
                   Caption = 'Transition Effect'
                   ChildSizing.LeftRightSpacing = 6
@@ -303,8 +303,8 @@ object MainForm: TMainForm
                   ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
                   ChildSizing.Layout = cclLeftToRightThenTopToBottom
                   ChildSizing.ControlsPerLine = 2
-                  ClientHeight = 52
-                  ClientWidth = 173
+                  ClientHeight = 51
+                  ClientWidth = 155
                   Columns = 2
                   Items.Strings = (
                     'Sudden'
@@ -314,27 +314,27 @@ object MainForm: TMainForm
                   TabOrder = 0
                 end
                 object GBTransitionDuration: TGroupBox
-                  Left = 279
-                  Height = 78
+                  Left = 248
+                  Height = 69
                   Top = 1
-                  Width = 163
+                  Width = 145
                   Caption = 'Transition Duration'
                   ChildSizing.EnlargeHorizontal = crsHomogenousSpaceResize
                   ChildSizing.EnlargeVertical = crsHomogenousSpaceResize
                   ChildSizing.ShrinkHorizontal = crsHomogenousSpaceResize
                   ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
                   ChildSizing.Layout = cclLeftToRightThenTopToBottom
-                  ClientHeight = 52
-                  ClientWidth = 159
+                  ClientHeight = 51
+                  ClientWidth = 143
                   ParentFont = False
                   TabOrder = 1
                   object SpEdTransitionDuration: TSpinEdit
-                    Left = 38
+                    Left = 34
                     Height = 27
-                    Top = 13
-                    Width = 84
-                    BorderSpacing.Around = 9
-                    Constraints.MinWidth = 84
+                    Top = 12
+                    Width = 75
+                    BorderSpacing.Around = 8
+                    Constraints.MinWidth = 75
                     MaxValue = 10000
                     MinValue = 30
                     ParentFont = False
@@ -351,11 +351,11 @@ object MainForm: TMainForm
     object PairSplitterSide2: TPairSplitterSide
       Cursor = crArrow
       Left = 0
-      Height = 270
-      Top = 405
-      Width = 900
-      ClientWidth = 900
-      ClientHeight = 270
+      Height = 240
+      Top = 360
+      Width = 800
+      ClientWidth = 800
+      ClientHeight = 240
       object GBLog: TGroupBox
         Left = 0
         Height = 270
@@ -363,8 +363,8 @@ object MainForm: TMainForm
         Width = 900
         Align = alClient
         Caption = 'Log'
-        ClientHeight = 244
-        ClientWidth = 896
+        ClientHeight = 252
+        ClientWidth = 898
         ParentFont = False
         TabOrder = 0
         object MemoLog: TMemo
@@ -373,7 +373,7 @@ object MainForm: TMainForm
           Top = 9
           Width = 878
           Align = alClient
-          BorderSpacing.Around = 9
+          BorderSpacing.Around = 8
           ParentFont = False
           ReadOnly = True
           ScrollBars = ssAutoVertical
@@ -381,11 +381,11 @@ object MainForm: TMainForm
         end
         object PMemoButtons: TPanel
           Left = 9
-          Height = 37
-          Top = 198
+          Height = 33
+          Top = 202
           Width = 878
           Align = alBottom
-          BorderSpacing.Around = 9
+          BorderSpacing.Around = 8
           BevelOuter = bvNone
           ChildSizing.EnlargeHorizontal = crsHomogenousSpaceResize
           ChildSizing.EnlargeVertical = crsHomogenousSpaceResize
@@ -393,42 +393,42 @@ object MainForm: TMainForm
           ChildSizing.ShrinkVertical = crsHomogenousSpaceResize
           ChildSizing.Layout = cclLeftToRightThenTopToBottom
           ChildSizing.ControlsPerLine = 3
-          ClientHeight = 37
+          ClientHeight = 33
           ClientWidth = 878
           ParentFont = False
           TabOrder = 1
           object BSelectAll: TButton
-            Left = 157
-            Height = 32
+            Left = 140
+            Height = 28
             Top = 3
-            Width = 84
+            Width = 75
             Caption = 'Select &All'
-            Constraints.MinWidth = 84
-            OnClick = BSelectAllClick
+            Constraints.MinWidth = 75
             ParentFont = False
             TabOrder = 0
+            OnClick = BSelectAllClick
           end
           object BCopy: TButton
-            Left = 398
-            Height = 32
+            Left = 354
+            Height = 28
             Top = 3
-            Width = 84
+            Width = 75
             Caption = '&Copy'
-            Constraints.MinWidth = 84
-            OnClick = BCopyClick
+            Constraints.MinWidth = 75
             ParentFont = False
             TabOrder = 1
+            OnClick = BCopyClick
           end
           object BClear: TButton
-            Left = 639
-            Height = 32
+            Left = 568
+            Height = 28
             Top = 3
-            Width = 84
+            Width = 75
             Caption = 'Clear &Log'
-            Constraints.MinWidth = 84
-            OnClick = BClearClick
+            Constraints.MinWidth = 75
             ParentFont = False
             TabOrder = 2
+            OnClick = BClearClick
           end
         end
       end
@@ -437,7 +437,7 @@ object MainForm: TMainForm
   object ConfigStorage: TJSONPropStorage
     StoredValues = <>
     Formatted = True
-    Left = 173
-    Top = 180
+    Left = 154
+    Top = 160
   end
 end

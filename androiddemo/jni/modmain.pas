@@ -9,8 +9,10 @@ uses
   Classes, SysUtils,
   fpjson,
   AndroidWidget, Laz_And_Controls, radiogroup, linearlayout,
-  menu, contextmenu, Spinner,
-  yeehaa;
+  menu, contextmenu, Spinner
+  ,yeehaa.synapse
+  // ,yeehaa.lnet // uncomment to use lnet backend
+  ;
   
 type
 

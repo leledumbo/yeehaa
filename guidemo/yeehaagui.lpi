@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <General>
+      <Flags>
+        <CompatibilityMode Value="True"/>
+      </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <MainUnit Value="0"/>
       <Title Value="yeehaagui"/>
       <Scaled Value="True"/>
       <ResourceType Value="res"/>
@@ -12,6 +14,7 @@
       <XPManifest>
         <DpiAware Value="True"/>
       </XPManifest>
+      <Icon Value="0"/>
     </General>
     <MacroValues Count="1">
       <Macro1 Name="LCLWidgetType" Value="qt5"/>
@@ -41,6 +44,7 @@
           <Linking>
             <Debugging>
               <GenerateDebugInfo Value="False"/>
+              <DebugInfoType Value="dsDwarf3"/>
             </Debugging>
             <LinkSmart Value="True"/>
             <Options>
@@ -57,7 +61,7 @@
         </CompilerOptions>
       </Item2>
       <SharedMatrixOptions Count="1">
-        <Item1 ID="948325957000" Modes="Release,Debug" Type="IDEMacro" MacroName="LCLWidgetType" Value="qt5"/>
+        <Item1 ID="948325957000" Modes="Debug,Release" Type="IDEMacro" MacroName="LCLWidgetType" Value="qt5"/>
       </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>
@@ -66,17 +70,19 @@
     </PublishOptions>
     <RunParams>
       <FormatVersion Value="2"/>
-      <Modes Count="0"/>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="3">
       <Item1>
-        <PackageName Value="lnetbase"/>
+        <PackageName Value="laz_synapse"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCL"/>
+        <PackageName Value="lnetbase"/>
       </Item2>
+      <Item3>
+        <PackageName Value="LCL"/>
+      </Item3>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="yeehaagui.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -90,10 +96,13 @@
         <UnitName Value="FormMain"/>
       </Unit1>
       <Unit2>
-        <Filename Value="../yeehaa.pas"/>
+        <Filename Value="../yeehaa.lnet.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Yeehaa"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="../yeehaa.synapse.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

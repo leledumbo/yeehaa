@@ -14,26 +14,6 @@ uses
 {%region /fold 'LAMW generated code'}
 
 { Class:     org_leledumbo_androiddemo_Controls
-  Method:    pEditTextOnActionIconTouchUp
-  Signature: (JLjava/lang/String;)V }
-procedure pEditTextOnActionIconTouchUp(PEnv: PJNIEnv; this: JObject;
-  pasobj: JLong; textContent: JString); cdecl;
-begin
-  Java_Event_pEditTextOnActionIconTouchUp(PEnv, this, TObject(pasobj),
-    textContent);
-end;
-
-{ Class:     org_leledumbo_androiddemo_Controls
-  Method:    pEditTextOnActionIconTouchDown
-  Signature: (JLjava/lang/String;)V }
-procedure pEditTextOnActionIconTouchDown(PEnv: PJNIEnv; this: JObject;
-  pasobj: JLong; textContent: JString); cdecl;
-begin
-  Java_Event_pEditTextOnActionIconTouchDown(PEnv, this, TObject(pasobj),
-    textContent);
-end;
-
-{ Class:     org_leledumbo_androiddemo_Controls
   Method:    pOnSpinnerItemSelected
   Signature: (JILjava/lang/String;)V }
 procedure pOnSpinnerItemSelected(PEnv: PJNIEnv; this: JObject; pasobj: JLong;
@@ -436,13 +416,27 @@ begin
   Java_Event_pOnRunOnUiThread(PEnv, this, TObject(pasobj), tag);
 end;
 
+{ Class:     org_leledumbo_androiddemo_Controls
+  Method:    pEditTextOnActionIconTouchUp
+  Signature: (JLjava/lang/String;)V }
+procedure pEditTextOnActionIconTouchUp(PEnv: PJNIEnv; this: JObject;
+  pasobj: JLong; textContent: JString); cdecl;
+begin
+  Java_Event_pEditTextOnActionIconTouchUp(PEnv, this, TObject(pasobj),
+    textContent);
+end;
+
+{ Class:     org_leledumbo_androiddemo_Controls
+  Method:    pEditTextOnActionIconTouchDown
+  Signature: (JLjava/lang/String;)V }
+procedure pEditTextOnActionIconTouchDown(PEnv: PJNIEnv; this: JObject;
+  pasobj: JLong; textContent: JString); cdecl;
+begin
+  Java_Event_pEditTextOnActionIconTouchDown(PEnv, this, TObject(pasobj),
+    textContent);
+end;
+
 const NativeMethods: array[0 .. 47] of JNINativeMethod = (
-   (name: 'pEditTextOnActionIconTouchUp';
-    signature: '(JLjava/lang/String;)V';
-    fnPtr: @pEditTextOnActionIconTouchUp; ),
-   (name: 'pEditTextOnActionIconTouchDown';
-    signature: '(JLjava/lang/String;)V';
-    fnPtr: @pEditTextOnActionIconTouchDown; ),
    (name: 'pOnSpinnerItemSelected';
     signature: '(JILjava/lang/String;)V';
     fnPtr: @pOnSpinnerItemSelected; ),
@@ -581,7 +575,13 @@ const NativeMethods: array[0 .. 47] of JNINativeMethod = (
     fnPtr: @pAppOnRequestPermissionResult; ),
    (name: 'pOnRunOnUiThread';
     signature: '(JI)V';
-    fnPtr: @pOnRunOnUiThread; )
+    fnPtr: @pOnRunOnUiThread; ),
+   (name: 'pEditTextOnActionIconTouchUp';
+    signature: '(JLjava/lang/String;)V';
+    fnPtr: @pEditTextOnActionIconTouchUp; ),
+   (name: 'pEditTextOnActionIconTouchDown';
+    signature: '(JLjava/lang/String;)V';
+    fnPtr: @pEditTextOnActionIconTouchDown; )
 );
 
 function RegisterNativeMethodsArray(PEnv: PJNIEnv; className: PChar;
@@ -641,10 +641,6 @@ end;
 exports
   JNI_OnLoad name 'JNI_OnLoad',
   JNI_OnUnload name 'JNI_OnUnload',
-  pEditTextOnActionIconTouchUp name 'Java_org_leledumbo_androiddemo_Controls_'
-    +'pEditTextOnActionIconTouchUp',
-  pEditTextOnActionIconTouchDown name 'Java_org_leledumbo_androiddemo_Controls'
-    +'_pEditTextOnActionIconTouchDown',
   pOnSpinnerItemSelected name 'Java_org_leledumbo_androiddemo_Controls_'
     +'pOnSpinnerItemSelected',
   pAppOnCreate name 'Java_org_leledumbo_androiddemo_Controls_pAppOnCreate',
@@ -713,7 +709,11 @@ exports
   pAppOnRequestPermissionResult name 'Java_org_leledumbo_androiddemo_Controls_'
     +'pAppOnRequestPermissionResult',
   pOnRunOnUiThread name 'Java_org_leledumbo_androiddemo_Controls_'
-    +'pOnRunOnUiThread';
+    +'pOnRunOnUiThread',
+  pEditTextOnActionIconTouchUp name 'Java_org_leledumbo_androiddemo_Controls_'
+    +'pEditTextOnActionIconTouchUp',
+  pEditTextOnActionIconTouchDown name 'Java_org_leledumbo_androiddemo_Controls'
+    +'_pEditTextOnActionIconTouchDown';
 
 {%endregion}
   

@@ -7,7 +7,10 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
   StdCtrls, Spin, PairSplitter, JSONPropStorage, syncobjs, fgl,
-  fpjson, Yeehaa;
+  fpjson
+  ,yeehaa.synapse
+  // ,yeehaa.lnet // uncomment to use lnet backend
+  ;
 
 type
 
@@ -73,8 +76,6 @@ type
     procedure InsertBulb(const ANewBulb: TBulbInfo);
     procedure LogCommandResult(const AID: Integer; AResult, AError: TJSONData);
     procedure LogConnectionError(const AMsg: String);
-  public
-
   end;
 
 var
@@ -163,7 +164,9 @@ procedure TMainForm.BRefreshClick(Sender: TObject);
 begin
   FCS.Enter;
   try
-    FBulbMap.Clear;
+    FBulbMap.Free;
+    FBulbMap := TBulbMap.Create;
+    FBulbMap.Sorted := true;
     LBBulbList.Clear;
   finally
     FCS.Leave;
