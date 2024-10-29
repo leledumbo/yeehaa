@@ -36,6 +36,7 @@ API is considered unstable as of now, it may break anytime as I find "better" in
 * FPC 3.X.X
 * Lazarus to build the GUI demo and ease building the library and unit
 * lNet (lnetbase to be precise, install from Lazarus' online package manager)
+* laz_synapse (install from Lazarus' online package manager)
 
 ## How to Build
 
