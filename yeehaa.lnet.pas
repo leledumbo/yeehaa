@@ -34,11 +34,11 @@ type
       const ABroadcastIntervalMillisecond: Integer = DefaultBroadcastIntervalMilliSeconds);
     destructor Destroy; override;
     procedure SetName(const AIP, AName: String);
-    procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
-    procedure SetBrightness(const AIP: String; const ABrightness: TPercentage; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
-    procedure SetColorTemperature(const AIP: String; const AColorTemperature: TColorTemperature; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration);
+    procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEfect: TTransitionEffect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
+    procedure SetBrightness(const AIP: String; const ABrightness: TPercentage; const ATransitionEfect: TTransitionEffect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
+    procedure SetColorTemperature(const AIP: String; const AColorTemperature: TColorTemperature; const ATransitionEfect: TTransitionEffect; const ATransitionDuration: TTransitionDuration);
     procedure SetRGB(const AIP: String; const ARGB: TRGBRange;
-      const ATransitionEfect: TTransitionEfect;
+      const ATransitionEfect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration);
     property OnConnectionError: TConnectionErrorEvent write FConnectionError;
     property OnBulbFound: TBulbFoundEvent write FOnBulbFound;
@@ -230,7 +230,7 @@ begin
 end;
 
 procedure TYeeConn.SetPower(const AIP: String; const AIsOn: Boolean;
-  const ATransitionEfect: TTransitionEfect;
+  const ATransitionEfect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration;
   const AColorMode: TPowerColorMode);
 var
@@ -248,7 +248,7 @@ begin
 end;
 
 procedure TYeeConn.SetBrightness(const AIP: String;
-  const ABrightness: TPercentage; const ATransitionEfect: TTransitionEfect;
+  const ABrightness: TPercentage; const ATransitionEfect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration;
   const AColorMode: TPowerColorMode);
 var
@@ -263,7 +263,7 @@ end;
 
 procedure TYeeConn.SetColorTemperature(const AIP: String;
   const AColorTemperature: TColorTemperature;
-  const ATransitionEfect: TTransitionEfect;
+  const ATransitionEfect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration);
 var
   LTransitionEfectStr: String;
@@ -276,7 +276,7 @@ begin
 end;
 
 procedure TYeeConn.SetRGB(const AIP: String; const ARGB: TRGBRange;
-  const ATransitionEfect: TTransitionEfect;
+  const ATransitionEfect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration);
 var
   LTransitionEfectStr: String;

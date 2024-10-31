@@ -31,11 +31,11 @@ type
       const ABroadcastIntervalMillisecond: Integer = DefaultBroadcastIntervalMilliSeconds);
     destructor Destroy; override;
     procedure SetName(const AIP, AName: String);
-    procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
-    procedure SetBrightness(const AIP: String; const ABrightness: TPercentage; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
-    procedure SetColorTemperature(const AIP: String; const AColorTemperature: TColorTemperature; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration);
+    procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEffect: TTransitionEffect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
+    procedure SetBrightness(const AIP: String; const ABrightness: TPercentage; const ATransitionEffect: TTransitionEffect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
+    procedure SetColorTemperature(const AIP: String; const AColorTemperature: TColorTemperature; const ATransitionEffect: TTransitionEffect; const ATransitionDuration: TTransitionDuration);
     procedure SetRGB(const AIP: String; const ARGB: TRGBRange;
-      const ATransitionEfect: TTransitionEfect;
+      const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration);
     property OnConnectionError: TConnectionErrorEvent write FConnectionError;
     property OnBulbFound: TBulbFoundEvent read FOnBulbFound write FOnBulbFound;
@@ -56,6 +56,8 @@ const
                    ;
 
   BulbPort         = '55443';
+  ReceiveTimeoutMS = 50;
+  SendTimeoutMS    = 200;
 
 {$define implementation}
 {$I yeehaacommons.inc}
@@ -121,9 +123,9 @@ var
   LColonPos: SizeInt;
 begin
   while not Terminated do begin
-    LRawResponse := FConn.RecvBufferStr(1000, 1000);
+    LRawResponse := FConn.RecvPacket(ReceiveTimeoutMS);
     if Trim(LRawResponse) <> EmptyStr then begin
-      {$ifdef debug}WriteLn(LRawResponse);{$endif}
+      {$ifdef debug}WriteLn(LRawResponse + LineEnding);{$endif}
       LRawResponseStream := TStringStream.Create(LRawResponse);
       AssignStream(LRawResponseText, LRawResponseStream);
       Reset(LRawResponseText);
@@ -171,7 +173,7 @@ var
 begin
   with TTCPBlockSocket.Create do
     try
-      HTTPTunnelTimeout := 1000;
+      HTTPTunnelTimeout := SendTimeoutMS;
       HTTPTunnelPort := IntToStr(FListenPort);
       LJSONMsg := nil;
       LJSONParams := nil;
@@ -186,12 +188,15 @@ begin
       SendString(LJSONMSgStr + #13#10);
 
       if Assigned(FOnCommandResult) then begin
-        LRawResult := RecvString(1000);
-        {$ifdef debug}WriteLn('ResultReceived: ' + LRawResult);{$endif}
-        LJSONResult := TJSONObject(GetJSON(LRawResult));
-        LJSONID := LJSONResult.FindPath('id');
-        if Assigned(LJSONID) then LCmdID := LJSONID.AsInteger else LCmdID := -1;
-        FOnCommandResult(LCmdID,LJSONResult.FindPath('result'),LJSONResult.FindPath('error'));
+        LRawResult := RecvPacket(ReceiveTimeoutMS);
+
+        if LRawResult <> EmptyStr then begin
+          {$ifdef debug}WriteLn('ResultReceived: ' + LRawResult);{$endif}
+          LJSONResult := TJSONObject(GetJSON(LRawResult));
+          LJSONID := LJSONResult.FindPath('id');
+          if Assigned(LJSONID) then LCmdID := LJSONID.AsInteger else LCmdID := -1;
+          FOnCommandResult(LCmdID,LJSONResult.FindPath('result'),LJSONResult.FindPath('error'));
+        end;
       end;
     finally
       LJSONResult.Free;
@@ -236,62 +241,62 @@ begin
 end;
 
 procedure TYeeConn.SetPower(const AIP: String; const AIsOn: Boolean;
-  const ATransitionEfect: TTransitionEfect;
+  const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration;
   const AColorMode: TPowerColorMode);
 var
-  LPowerStateStr,LTransitionEfectStr: String;
+  LPowerStateStr,LTransitionEffectStr: String;
 begin
   if AIsOn then
     LPowerStateStr := 'on'
   else
     LPowerStateStr := 'off';
-  case ATransitionEfect of
-    teSmooth: LTransitionEfectStr := 'smooth';
-    teSudden: LTransitionEfectStr := 'sudden';
+  case ATransitionEffect of
+    teSmooth: LTransitionEffectStr := 'smooth';
+    teSudden: LTransitionEffectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_power',[LPowerStateStr,LTransitionEfectStr,ATransitionDuration,Ord(AColorMode)]);
+  SendCommand(AIP,1,'set_power',[LPowerStateStr,LTransitionEffectStr,ATransitionDuration,Ord(AColorMode)]);
 end;
 
 procedure TYeeConn.SetBrightness(const AIP: String;
-  const ABrightness: TPercentage; const ATransitionEfect: TTransitionEfect;
+  const ABrightness: TPercentage; const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration;
   const AColorMode: TPowerColorMode);
 var
-  LTransitionEfectStr: String;
+  LTransitionEffectStr: String;
 begin
-  case ATransitionEfect of
-    teSmooth: LTransitionEfectStr := 'smooth';
-    teSudden: LTransitionEfectStr := 'sudden';
+  case ATransitionEffect of
+    teSmooth: LTransitionEffectStr := 'smooth';
+    teSudden: LTransitionEffectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_bright',[ABrightness,LTransitionEfectStr,ATransitionDuration]);
+  SendCommand(AIP,1,'set_bright',[ABrightness,LTransitionEffectStr,ATransitionDuration]);
 end;
 
 procedure TYeeConn.SetColorTemperature(const AIP: String;
   const AColorTemperature: TColorTemperature;
-  const ATransitionEfect: TTransitionEfect;
+  const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration);
 var
-  LTransitionEfectStr: String;
+  LTransitionEffectStr: String;
 begin
-  case ATransitionEfect of
-    teSmooth: LTransitionEfectStr := 'smooth';
-    teSudden: LTransitionEfectStr := 'sudden';
+  case ATransitionEffect of
+    teSmooth: LTransitionEffectStr := 'smooth';
+    teSudden: LTransitionEffectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_ct_abx',[AColorTemperature,LTransitionEfectStr,ATransitionDuration]);
+  SendCommand(AIP,1,'set_ct_abx',[AColorTemperature,LTransitionEffectStr,ATransitionDuration]);
 end;
 
 procedure TYeeConn.SetRGB(const AIP: String; const ARGB: TRGBRange;
-  const ATransitionEfect: TTransitionEfect;
+  const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration);
 var
-  LTransitionEfectStr: String;
+  LTransitionEffectStr: String;
 begin
-  case ATransitionEfect of
-    teSmooth: LTransitionEfectStr := 'smooth';
-    teSudden: LTransitionEfectStr := 'sudden';
+  case ATransitionEffect of
+    teSmooth: LTransitionEffectStr := 'smooth';
+    teSudden: LTransitionEffectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_rgb',[NtoBE(ColorToRGB(ARGB)) shr 8,LTransitionEfectStr,ATransitionDuration]);
+  SendCommand(AIP,1,'set_rgb',[NtoBE(ColorToRGB(ARGB)) shr 8,LTransitionEffectStr,ATransitionDuration]);
 end;
 
 end.

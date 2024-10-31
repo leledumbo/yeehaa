@@ -29,32 +29,38 @@ type
     EdName: TEdit;
     GBBulbList: TGroupBox;
     GBBulbProps: TGroupBox;
-    GBOptions: TGroupBox;
-    GBTransitionDuration: TGroupBox;
     GBLog: TGroupBox;
     ConfigStorage: TJSONPropStorage;
-    LbTemperature: TLabel;
+    GBOptions: TGroupBox;
+    GBColors: TGroupBox;
+    GBTransitionDuration: TGroupBox;
+    LblColorMode: TLabel;
     LbBrightness: TLabel;
     LBBulbList: TListBox;
     LbModel: TLabel;
     LbName: TLabel;
     LbPoweredOn: TLabel;
     LbRGB: TLabel;
+    LbTemperature: TLabel;
     MemoLog: TMemo;
+    PairSplitter1: TPairSplitter;
+    PairSplitterSide7: TPairSplitterSide;
+    PairSplitterSide8: TPairSplitterSide;
     PMemoButtons: TPanel;
     PSBulbLog: TPairSplitter;
     PSBulbListProps: TPairSplitter;
-    PSBulbPropsOpts: TPairSplitter;
+    PSPropsColopts: TPairSplitter;
     PairSplitterSide1: TPairSplitterSide;
     PairSplitterSide2: TPairSplitterSide;
     PairSplitterSide3: TPairSplitterSide;
     PairSplitterSide4: TPairSplitterSide;
     PairSplitterSide5: TPairSplitterSide;
-    PairSplitterSide6: TPairSplitterSide;
+    PSColorsOptions: TPairSplitterSide;
+    RGColorMode: TRadioGroup;
     RGTransitionEffect: TRadioGroup;
     SpEdBrightness: TSpinEdit;
-    SpEdTransitionDuration: TSpinEdit;
     SpEdTemperature: TSpinEdit;
+    SpEdTransitionDuration: TSpinEdit;
     procedure BClearClick(Sender: TObject);
     procedure BCopyClick(Sender: TObject);
     procedure BSelectAllClick(Sender: TObject);
@@ -65,6 +71,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure BRefreshClick(Sender: TObject);
     procedure LBBulbListSelectionChange(Sender: TObject; User: boolean);
+    procedure RGColorModeSelectionChanged(Sender: TObject);
     procedure SpEdBrightnessChange(Sender: TObject);
     procedure SpEdTemperatureChange(Sender: TObject);
   private
@@ -113,14 +120,20 @@ end;
 
 procedure TMainForm.CBPoweredOnChange(Sender: TObject);
 var
-  LTransitionEffect: TTransitionEfect;
+  LTransitionEffect: TTransitionEffect;
 begin
   if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
     case RGTransitionEffect.ItemIndex of
              0: LTransitionEffect := teSudden;
       otherwise LTransitionEffect := teSmooth;
     end;
+
     FYeeConn.SetPower(FSelectedBulb.IP,CBPoweredOn.Checked,LTransitionEffect,SpEdTransitionDuration.Value);
+
+    with FSelectedBulb do begin
+      PoweredOn := CBPoweredOn.Checked
+    end;
+    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
   end;
 end;
 
@@ -131,15 +144,25 @@ end;
 
 procedure TMainForm.CBColorColorChanged(Sender: TObject);
 var
-  LTransitionEffect: TTransitionEfect;
+  LTransitionEffect: TTransitionEffect;
 begin
   if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
     case RGTransitionEffect.ItemIndex of
              0: LTransitionEffect := teSudden;
       otherwise LTransitionEffect := teSmooth;
     end;
+
     FYeeConn.SetPower(FSelectedBulb.IP,true,LTransitionEffect,SpEdTransitionDuration.Value,pcmRGB);
     FYeeConn.SetRGB(FSelectedBulb.IP,TRGBRange(CBColor.ButtonColor),LTransitionEffect,SpEdTransitionDuration.Value);
+
+    with FSelectedBulb do begin
+      PoweredOn := true;
+      TransitionEffect := LTransitionEffect;
+      TransitionDuration := SpEdTransitionDuration.Value;
+      RGB := TRGBRange(CBColor.ButtonColor);
+      ColorMode := cmRGB;
+    end;
+    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
   end;
 end;
 
@@ -157,6 +180,11 @@ procedure TMainForm.EdNameChange(Sender: TObject);
 begin
   if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
     FYeeConn.SetName(FSelectedBulb.IP,EdName.Text);
+
+    with FSelectedBulb do begin
+      Name := EdName.Text;
+    end;
+    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
   end;
 end;
 
@@ -176,48 +204,106 @@ end;
 procedure TMainForm.LBBulbListSelectionChange(Sender: TObject; User: boolean);
 begin
   GBBulbProps.Enabled := true;
+  GBColors.Enabled := true;
+  GBOptions.Enabled := true;
   try
     FAutomaticStateChange := true;
     try
       FSelectedBulb := FBulbMap[LBBulbList.GetSelectedText];
       EdModel.Text := FSelectedBulb.Model;
+      EdName.Text := FSelectedBulb.Name;
       CBPoweredOn.Checked := FSelectedBulb.PoweredOn;
       SpEdBrightness.Value := FSelectedBulb.BrightnessPercentage;
       CBColor.ButtonColor := RGBToTColor(FSelectedBulb.RGB);
-      EdName.Text := FSelectedBulb.Name;
       SpEdTemperature.Value := FSelectedBulb.CT;
+      RGColorMode.ItemIndex := Ord(FSelectedBulb.ColorMode) - 1;
     finally
       FAutomaticStateChange := false;
     end;
+    // need to manually trigger due to FAutomaticStateChange check as well as no command should be sent due to bulb selection change
+    RGColorModeSelectionChanged(LBBulbList);
   except
      on e: EListError do ; // intentionally ignored
   end;
 end;
 
-procedure TMainForm.SpEdBrightnessChange(Sender: TObject);
+procedure TMainForm.RGColorModeSelectionChanged(Sender: TObject);
 var
-  LTransitionEffect: TTransitionEfect;
+  LTransitionEffect: TTransitionEffect;
 begin
   if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
     case RGTransitionEffect.ItemIndex of
              0: LTransitionEffect := teSudden;
       otherwise LTransitionEffect := teSmooth;
     end;
+
+    case RGColorMode.ItemIndex of
+      0: begin
+        if Sender <> LBBulbList then FYeeConn.SetRGB(FSelectedBulb.IP,TRGBRange(CBColor.ButtonColor),LTransitionEffect,SpEdTransitionDuration.Value);
+        SpEdTemperature.Enabled := false;
+        CBColor.Enabled := true;
+      end;
+      1: begin
+        if Sender <> LBBulbList then FYeeConn.SetColorTemperature(FSelectedBulb.IP,SpEdTemperature.Value,LTransitionEffect,SpEdTransitionDuration.Value);
+        CBColor.Enabled := false;
+        SpEdTemperature.Enabled := true;
+      end;
+      2: begin
+        if Sender <> LBBulbList then // coming soon
+        CBColor.Enabled := false;
+        SpEdTemperature.Enabled := false;
+      end;
+    end;
+
+    with FSelectedBulb do begin
+      ColorMode := TColorMode(RGColorMode.ItemIndex + 1);
+    end;
+    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+  end;
+end;
+
+procedure TMainForm.SpEdBrightnessChange(Sender: TObject);
+var
+  LTransitionEffect: TTransitionEffect;
+begin
+  if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
+    case RGTransitionEffect.ItemIndex of
+             0: LTransitionEffect := teSudden;
+      otherwise LTransitionEffect := teSmooth;
+    end;
+
     FYeeConn.SetBrightness(FSelectedBulb.IP,SpEdBrightness.Value,LTransitionEffect,SpEdTransitionDuration.Value);
+
+    with FSelectedBulb do begin
+      BrightnessPercentage := SpEdBrightness.Value;
+      TransitionEffect := LTransitionEffect;
+      TransitionDuration := SpEdTransitionDuration.Value;
+    end;
+    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
   end;
 end;
 
 procedure TMainForm.SpEdTemperatureChange(Sender: TObject);
 var
-  LTransitionEffect: TTransitionEfect;
+  LTransitionEffect: TTransitionEffect;
 begin
   if (LBBulbList.ItemIndex >= 0) and not FAutomaticStateChange then begin
     case RGTransitionEffect.ItemIndex of
              0: LTransitionEffect := teSudden;
       otherwise LTransitionEffect := teSmooth;
     end;
+
     FYeeConn.SetPower(FSelectedBulb.IP,true,LTransitionEffect,SpEdTransitionDuration.Value,pcmCT);
     FYeeConn.SetColorTemperature(FSelectedBulb.IP,SpEdTemperature.Value,LTransitionEffect,SpEdTransitionDuration.Value);
+
+    with FSelectedBulb do begin
+      PoweredOn := true;
+      TransitionEffect := LTransitionEffect;
+      TransitionDuration := SpEdTransitionDuration.Value;
+      CT := SpEdTemperature.Value;
+      ColorMode := cmRGB;
+    end;
+    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
   end;
 end;
 
@@ -228,6 +314,21 @@ begin
     if FBulbMap.IndexOf(ANewBulb.IP) < 0 then
       LBBulbList.Items.Add(ANewBulb.IP);
     FBulbMap[ANewBulb.IP] := ANewBulb;
+
+    {$ifdef debug}
+    WriteLn('ID = ', ANewBulb.ID);
+    WriteLn('IP = ', ANewBulb.IP);
+    WriteLn('Model = ', ANewBulb.Model);
+    WriteLn('Name = ', ANewBulb.Name);
+    WriteLn('PoweredOn = ', ANewBulb.PoweredOn);
+    WriteLn('BrightnessPercentage = ', ANewBulb.BrightnessPercentage);
+    WriteLn('TransitionEffect = ', ANewBulb.TransitionEffect);
+    WriteLn('TransitionDuration = ', ANewBulb.TransitionDuration);
+    WriteLn('ColorMode = ', ANewBulb.ColorMode);
+    WriteLn('RGB = ', ANewBulb.RGB);
+    WriteLn('CT = ', ANewBulb.CT);
+    WriteLn;
+    {$endif debug}
   finally
     FCS.Leave;
   end;
