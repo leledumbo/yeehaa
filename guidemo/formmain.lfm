@@ -8,7 +8,7 @@ object MainForm: TMainForm
   ClientWidth = 724
   Position = poScreenCenter
   SessionProperties = 'Height;Left;PSBulbListProps.Position;PSBulbLog.Position;PSBulbPropsOpts.Position;RGTransitionEffect.ItemIndex;SpEdBrightness.Value;Top;Width;WindowState;PSPropsColopts.Position'
-  LCLVersion = '4.0.0.1'
+  LCLVersion = '4.1.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   object PSBulbLog: TPairSplitter

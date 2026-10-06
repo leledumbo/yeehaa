@@ -86,7 +86,7 @@ end;
 
 procedure TAMMain.CBPoweredOnClick(Sender: TObject);
 var
-  LTransitionEffect: TTransitionEfect;
+  LTransitionEffect: TTransitionEffect;
 begin
   if (SpBulbList.SelectedIndex >= 0) and not FAutomaticStateChange then begin
     {case RGTransitionEffect.ItemIndex of

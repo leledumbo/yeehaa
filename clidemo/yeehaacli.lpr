@@ -6,6 +6,7 @@ uses cthreads
     ,SysUtils
     ,fpjson
     ,fgl
+    ,syncobjs
     ,yeehaa.synapse
     // ,yeehaa.lnet // uncomment to use lnet backend
     ;
@@ -22,6 +23,7 @@ type
   THandler = class
     FBulbInfos: TBulbInfos;
     FConn: TYeeConn;
+    FCS: TCriticalSection;
   private
     procedure DisplayConnectionError(const AMsg: String);
     procedure HandleBulbFound(const ANewBulb: TBulbInfo);
@@ -30,6 +32,7 @@ type
     constructor Create(const AListenPort: Word);
     destructor Destroy; override;
     procedure PrintBulbs;
+    procedure DeleteBulbs;
     procedure TogglePower(const AIndex: Integer);
   end;
 
@@ -42,7 +45,13 @@ end;
 
 procedure THandler.HandleBulbFound(const ANewBulb: TBulbInfo);
 begin
-  FBulbInfos[ANewBulb.ID] := ANewBulb;
+  // called from the discovery thread
+  FCS.Enter;
+  try
+    FBulbInfos[ANewBulb.ID] := ANewBulb;
+  finally
+    FCS.Leave;
+  end;
 end;
 
 procedure THandler.DisplayResult(const AID: Integer; AResult, AError: TJSONData
@@ -55,6 +64,7 @@ end;
 
 constructor THandler.Create(const AListenPort: Word);
 begin
+  FCS := TCriticalSection.Create;
   FBulbInfos := TBulbInfos.Create;
 
   FConn := TYeeConn.Create(AListenPort);
@@ -67,8 +77,10 @@ end;
 
 destructor THandler.Destroy;
 begin
+  // FConn.Free stops the discovery thread before the shared structures go away
   FConn.Free;
   FBulbInfos.Free;
+  FCS.Free;
   inherited Destroy;
 end;
 
@@ -77,27 +89,52 @@ var
   i: Integer;
   LBulbInfo: TBulbInfo;
 begin
-  for i := 0 to FBulbInfos.Count - 1 do begin
-    LBulbInfo := FBulbInfos.Data[i];
-    WriteLn(
-      i + 1,
-      ': ip='+LBulbInfo.IP+
-      ',model='+LBulbInfo.Model+
-      ',power=',LBulbInfo.PoweredOn,
-      ',brightness=',LBulbInfo.BrightnessPercentage,
-      ',rgb=',LBulbInfo.RGB
-    );
+  FCS.Enter;
+  try
+    for i := 0 to FBulbInfos.Count - 1 do begin
+      LBulbInfo := FBulbInfos.Data[i];
+      WriteLn(
+        i + 1,
+        ': ip='+LBulbInfo.IP+
+        ',model='+LBulbInfo.Model+
+        ',power=',LBulbInfo.PoweredOn,
+        ',brightness=',LBulbInfo.BrightnessPercentage,
+        ',rgb=',LBulbInfo.RGB,
+        ',name=',LBulbInfo.Name
+      );
+    end;
+  finally
+    FCS.Leave;
+  end;
+end;
+
+procedure THandler.DeleteBulbs;
+begin
+  FCS.Enter;
+  try
+    FBulbInfos.Free;
+    FBulbInfos := TBulbInfos.Create;
+  finally
+    FCS.Leave;
   end;
 end;
 
 procedure THandler.TogglePower(const AIndex: Integer);
 var
   LBulbInfo: TBulbInfo;
+  LValid: Boolean;
 begin
-  if (0 <= AIndex) and (AIndex < FBulbInfos.Count) then begin
-    LBulbInfo := FBulbInfos.Data[AIndex];
-    FConn.SetPower(LBulbInfo.IP,not LBulbInfo.PoweredOn,teSmooth,500);
-  end else
+  FCS.Enter;
+  try
+    LValid := (0 <= AIndex) and (AIndex < FBulbInfos.Count);
+    if LValid then
+      LBulbInfo := FBulbInfos.Data[AIndex];
+  finally
+    FCS.Leave;
+  end;
+  if LValid then
+    FConn.SetPower(LBulbInfo.IP,not LBulbInfo.PoweredOn,teSmooth,500)
+  else
     WriteLn('Invalid bulb index, print first to look for valid ones')
 end;
 
@@ -110,6 +147,7 @@ begin
       Quit := false;
       repeat
         WriteLn('[P]rint bulbs');
+        WriteLn('[D]elete bulbs');
         WriteLn('[T]oggle power');
         WriteLn('[Q]uit');
         Write('Cmd: ');ReadLn(Cmd);
@@ -120,6 +158,7 @@ begin
               Write('Bulb index: ');ReadLn(Cmd);
               TogglePower(StrToIntDef(Cmd,-1));
             end;
+            'D': DeleteBulbs;
             'Q': Quit := true;
             else WriteLn(StdErr,'Command not understood: ' + Cmd);
           end;

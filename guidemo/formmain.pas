@@ -9,7 +9,7 @@ uses
   StdCtrls, Spin, PairSplitter, JSONPropStorage, syncobjs, fgl,
   fpjson
   ,yeehaa.synapse
-  // ,yeehaa.lnet // uncomment to use lnet backend
+  //,yeehaa.lnet // uncomment to use lnet backend
   ;
 
 type
@@ -80,9 +80,13 @@ type
     FSelectedBulb: TBulbInfo;
     FCS: TCriticalSection;
     FAutomaticStateChange: Boolean;
+    BulbListTimer: TTimer;         // created in code; flushes pending data on main thread
+    FPendingBulbIPs: TStringList;  // written by discovery thread, flushed by timer
+    FPendingLogs: TStringList;     // written by worker threads, flushed by timer
     procedure InsertBulb(const ANewBulb: TBulbInfo);
     procedure LogCommandResult(const AID: Integer; AResult, AError: TJSONData);
     procedure LogConnectionError(const AMsg: String);
+    procedure BulbListTimerTimer(Sender: TObject);
   end;
 
 var
@@ -100,6 +104,12 @@ const
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
+  // shared structures first: discovery/error events may arrive as soon as
+  // TYeeConn is created below
+  FCS := TCriticalSection.Create;
+  FPendingBulbIPs := TStringList.Create;
+  FPendingLogs := TStringList.Create;
+
   FBulbMap := TBulbMap.Create;
   FBulbMap.Sorted := true;
 
@@ -108,13 +118,22 @@ begin
   FYeeConn.OnCommandResult := @LogCommandResult;
   FYeeConn.OnConnectionError := @LogConnectionError;
 
-  FCS := TCriticalSection.Create;
+  // Flush worker-thread data to LCL controls on the main thread.
+  BulbListTimer := TTimer.Create(Self);
+  BulbListTimer.Interval := 500;
+  BulbListTimer.OnTimer := @BulbListTimerTimer;
+  BulbListTimer.Enabled := true;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
+  BulbListTimer.Enabled := false;
+  // Frees the connection first: it stops the worker threads, so the shared
+  // structures below are no longer touched from other threads.
   FYeeConn.Free;
   FBulbMap.Free;
+  FPendingBulbIPs.Free;
+  FPendingLogs.Free;
   FCS.Free;
 end;
 
@@ -133,7 +152,12 @@ begin
     with FSelectedBulb do begin
       PoweredOn := CBPoweredOn.Checked
     end;
-    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    FCS.Enter;
+    try
+      FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    finally
+      FCS.Leave;
+    end;
   end;
 end;
 
@@ -162,7 +186,12 @@ begin
       RGB := TRGBRange(CBColor.ButtonColor);
       ColorMode := cmRGB;
     end;
-    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    FCS.Enter;
+    try
+      FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    finally
+      FCS.Leave;
+    end;
   end;
 end;
 
@@ -184,7 +213,12 @@ begin
     with FSelectedBulb do begin
       Name := EdName.Text;
     end;
-    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    FCS.Enter;
+    try
+      FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    finally
+      FCS.Leave;
+    end;
   end;
 end;
 
@@ -196,6 +230,7 @@ begin
     FBulbMap := TBulbMap.Create;
     FBulbMap.Sorted := true;
     LBBulbList.Clear;
+    FPendingBulbIPs.Clear;
   finally
     FCS.Leave;
   end;
@@ -209,7 +244,12 @@ begin
   try
     FAutomaticStateChange := true;
     try
-      FSelectedBulb := FBulbMap[LBBulbList.GetSelectedText];
+      FCS.Enter;
+      try
+        FSelectedBulb := FBulbMap[LBBulbList.GetSelectedText];
+      finally
+        FCS.Leave;
+      end;
       EdModel.Text := FSelectedBulb.Model;
       EdName.Text := FSelectedBulb.Name;
       CBPoweredOn.Checked := FSelectedBulb.PoweredOn;
@@ -258,7 +298,12 @@ begin
     with FSelectedBulb do begin
       ColorMode := TColorMode(RGColorMode.ItemIndex + 1);
     end;
-    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    FCS.Enter;
+    try
+      FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    finally
+      FCS.Leave;
+    end;
   end;
 end;
 
@@ -279,7 +324,12 @@ begin
       TransitionEffect := LTransitionEffect;
       TransitionDuration := SpEdTransitionDuration.Value;
     end;
-    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    FCS.Enter;
+    try
+      FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    finally
+      FCS.Leave;
+    end;
   end;
 end;
 
@@ -301,49 +351,81 @@ begin
       TransitionEffect := LTransitionEffect;
       TransitionDuration := SpEdTransitionDuration.Value;
       CT := SpEdTemperature.Value;
-      ColorMode := cmRGB;
+      ColorMode := cmCT;
     end;
-    FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    FCS.Enter;
+    try
+      FBulbMap[FSelectedBulb.IP] := FSelectedBulb;
+    finally
+      FCS.Leave;
+    end;
   end;
 end;
 
 procedure TMainForm.InsertBulb(const ANewBulb: TBulbInfo);
 begin
+  // This event fires on the discovery thread. Only touch structures guarded
+  // by FCS here; LCL controls are updated by BulbListTimer on the main thread.
   FCS.Enter;
   try
-    if FBulbMap.IndexOf(ANewBulb.IP) < 0 then
-      LBBulbList.Items.Add(ANewBulb.IP);
     FBulbMap[ANewBulb.IP] := ANewBulb;
-
-    {$ifdef debug}
-    WriteLn('ID = ', ANewBulb.ID);
-    WriteLn('IP = ', ANewBulb.IP);
-    WriteLn('Model = ', ANewBulb.Model);
-    WriteLn('Name = ', ANewBulb.Name);
-    WriteLn('PoweredOn = ', ANewBulb.PoweredOn);
-    WriteLn('BrightnessPercentage = ', ANewBulb.BrightnessPercentage);
-    WriteLn('TransitionEffect = ', ANewBulb.TransitionEffect);
-    WriteLn('TransitionDuration = ', ANewBulb.TransitionDuration);
-    WriteLn('ColorMode = ', ANewBulb.ColorMode);
-    WriteLn('RGB = ', ANewBulb.RGB);
-    WriteLn('CT = ', ANewBulb.CT);
-    WriteLn;
-    {$endif debug}
+    if FPendingBulbIPs.IndexOf(ANewBulb.IP) < 0 then
+      FPendingBulbIPs.Add(ANewBulb.IP);
   finally
     FCS.Leave;
   end;
+
+  {$ifdef debug}
+  WriteLn('ID = ', ANewBulb.ID);
+  WriteLn('IP = ', ANewBulb.IP);
+  WriteLn('Model = ', ANewBulb.Model);
+  WriteLn('Name = ', ANewBulb.Name);
+  WriteLn('PoweredOn = ', ANewBulb.PoweredOn);
+  WriteLn('BrightnessPercentage = ', ANewBulb.BrightnessPercentage);
+  WriteLn('TransitionEffect = ', ANewBulb.TransitionEffect);
+  WriteLn('TransitionDuration = ', ANewBulb.TransitionDuration);
+  WriteLn('ColorMode = ', ANewBulb.ColorMode);
+  WriteLn('RGB = ', ANewBulb.RGB);
+  WriteLn('CT = ', ANewBulb.CT);
+  WriteLn;
+  {$endif debug}
 end;
 
 procedure TMainForm.LogCommandResult(const AID: Integer; AResult,
   AError: TJSONData);
 begin
+  // Commands are always sent from the main thread, so direct UI access is safe.
   if Assigned(AResult) then MemoLog.Lines.Add('[Result] ' + AResult.AsJSON);
   if Assigned(AError) then MemoLog.Lines.Add('[Error] ' + AError.AsJSON);
 end;
 
 procedure TMainForm.LogConnectionError(const AMsg: String);
 begin
-  MemoLog.Lines.Add('[Connection error] ' + AMsg);
+  // This event can fire on a worker thread; defer the UI update to the timer.
+  FCS.Enter;
+  try
+    FPendingLogs.Add('[Connection error] ' + AMsg);
+  finally
+    FCS.Leave;
+  end;
+end;
+
+procedure TMainForm.BulbListTimerTimer(Sender: TObject);
+var
+  i: Integer;
+begin
+  FCS.Enter;
+  try
+    for i := 0 to FPendingBulbIPs.Count - 1 do
+      if LBBulbList.Items.IndexOf(FPendingBulbIPs[i]) < 0 then
+        LBBulbList.Items.Add(FPendingBulbIPs[i]);
+    FPendingBulbIPs.Clear;
+    for i := 0 to FPendingLogs.Count - 1 do
+      MemoLog.Lines.Add(FPendingLogs[i]);
+    FPendingLogs.Clear;
+  finally
+    FCS.Leave;
+  end;
 end;
 
 end.

@@ -5,7 +5,7 @@ unit yeehaa.lnet;
 interface
 
 uses
-  Classes, SysUtils, StreamIO,
+  Classes, SysUtils,
   fpjson,
   jsonparser,
   lNet,
@@ -21,27 +21,28 @@ type
   private
     FConnectionError: TConnectionErrorEvent;
     FListenPort: Word;
-    FUDPConn: TLUdp;
     FBroadcastThread: TThread;
     FOnBulbFound: TBulbFoundEvent;
     FOnCommandResult: TCommandResultEvent;
-    procedure CanSend(aSocket: TLSocket);
-    procedure ConnectionError(const msg: string; aSocket: TLSocket);
-    procedure BulbFound(aSocket: TLSocket);
+    FLastCommandError: String;
+    FHasCommandError: Boolean;
+    procedure FireBulbFound(const ANewBulb: TBulbInfo);
+    procedure FireConnectionError(const AMsg: String);
+    procedure HandleSocketError(const msg: string; aSocket: TLSocket);
     procedure SendCommand(const AIP: String; const AID: Integer; const AMethod: String; AParams: array of const);
   public
     constructor Create(const AListenPort: Word;
       const ABroadcastIntervalMillisecond: Integer = DefaultBroadcastIntervalMilliSeconds);
     destructor Destroy; override;
     procedure SetName(const AIP, AName: String);
-    procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEfect: TTransitionEffect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
-    procedure SetBrightness(const AIP: String; const ABrightness: TPercentage; const ATransitionEfect: TTransitionEffect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
-    procedure SetColorTemperature(const AIP: String; const AColorTemperature: TColorTemperature; const ATransitionEfect: TTransitionEffect; const ATransitionDuration: TTransitionDuration);
+    procedure SetPower(const AIP: String; const AIsOn: Boolean; const ATransitionEffect: TTransitionEffect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
+    procedure SetBrightness(const AIP: String; const ABrightness: TPercentage; const ATransitionEffect: TTransitionEffect; const ATransitionDuration: TTransitionDuration; const AColorMode: TPowerColorMode = pcmDefault);
+    procedure SetColorTemperature(const AIP: String; const AColorTemperature: TColorTemperature; const ATransitionEffect: TTransitionEffect; const ATransitionDuration: TTransitionDuration);
     procedure SetRGB(const AIP: String; const ARGB: TRGBRange;
-      const ATransitionEfect: TTransitionEffect;
-  const ATransitionDuration: TTransitionDuration);
+      const ATransitionEffect: TTransitionEffect;
+      const ATransitionDuration: TTransitionDuration);
     property OnConnectionError: TConnectionErrorEvent write FConnectionError;
-    property OnBulbFound: TBulbFoundEvent write FOnBulbFound;
+    property OnBulbFound: TBulbFoundEvent read FOnBulbFound write FOnBulbFound;
     property OnCommandResult: TCommandResultEvent write FOnCommandResult;
   end;
 
@@ -58,7 +59,10 @@ const
                    + 'ST: wifi_bulb'#13#10
                    ;
 
-  BulbPort         = 55443;
+  BulbPort                = 55443;
+  PollIntervalMS          = 100;   // event pump granularity
+  CommandConnectTimeoutMS = 2000;  // max time to establish a bulb TCP connection
+  CommandReceiveTimeoutMS = 2000;  // max time to wait for a bulb response
 
 {$define implementation}
 {$I yeehaacommons.inc}
@@ -68,225 +72,294 @@ type
   { TBroadcastThread }
 
   TBroadcastThread = class(TThread)
-    FConn: TLUdp;
+  private
+    FOwner: TYeeConn;
+    FListenPort: Word;
     FBroadcastIntervalMillisecond: Integer;
-    constructor Create(AConn: TLUdp; ABroadcastIntervalMillisecond: Integer = DefaultBroadcastIntervalMilliSeconds);
+    procedure HandleReceive(aSocket: TLSocket);
+    procedure HandleError(const msg: string; aSocket: TLSocket);
+  public
+    constructor Create(AOwner: TYeeConn; AListenPort: Word;
+      ABroadcastIntervalMillisecond: Integer);
     procedure Execute; override;
   end;
 
 { TBroadcastThread }
 
-constructor TBroadcastThread.Create(AConn: TLUdp; ABroadcastIntervalMillisecond: Integer);
+constructor TBroadcastThread.Create(AOwner: TYeeConn; AListenPort: Word;
+  ABroadcastIntervalMillisecond: Integer);
 begin
   inherited Create(true);
-  FreeOnTerminate:=true;
-  FConn := AConn;
+  FreeOnTerminate := false;
+  FOwner := AOwner;
+  FListenPort := AListenPort;
   FBroadcastIntervalMillisecond := ABroadcastIntervalMillisecond;
-  Start;
+end;
+
+procedure TBroadcastThread.HandleReceive(aSocket: TLSocket);
+var
+  LRawResponse: String;
+  LBulbInfo: TBulbInfo;
+begin
+  if aSocket.GetMessage(LRawResponse) > 0 then begin
+    {$ifdef debug}WriteLn(LRawResponse);{$endif}
+    if TryParseBulbInfo(LRawResponse, LBulbInfo) then
+      FOwner.FireBulbFound(LBulbInfo);
+  end;
+end;
+
+procedure TBroadcastThread.HandleError(const msg: string; aSocket: TLSocket);
+begin
+  FOwner.FireConnectionError(msg);
 end;
 
 procedure TBroadcastThread.Execute;
 var
-  LLastBroadcastTime: TDateTime;
+  LConn: TLUdp;
+  LNextBroadcast: TDateTime;
 begin
-  LLastBroadcastTime := IncMilliSecond(Now,-FBroadcastIntervalMillisecond);
-  while not Terminated do begin
-    if MilliSecondsBetween(LLastBroadcastTime,Now) >= FBroadcastIntervalMillisecond then begin
-      {$ifdef debug}WriteLn('Connect: ', {$endif}FConn.Connect(BroadcastAddress,BroadcastPort){$ifdef debug}){$endif};
-      LLastBroadcastTime := Now;
+  // The TLUdp instance is created, used and destroyed exclusively inside
+  // this thread, so all event dispatching stays in one thread.
+  LConn := TLUdp.Create(nil);
+  try
+    LConn.Timeout := PollIntervalMS;
+    LConn.OnReceive := @HandleReceive;
+    LConn.OnError := @HandleError;
+    if not LConn.Listen(FListenPort) then
+      Exit; // the OnError handler has already reported the reason
+
+    LNextBroadcast := 0;
+    while not Terminated do begin
+      if Now >= LNextBroadcast then begin
+        // explicit send-to-address: no need for Connect() and no risk of
+        // flooding, we send exactly once per interval
+        LConn.SendMessage(BroadcastMessage, BroadcastAddress + ':' + IntToStr(BroadcastPort));
+        LNextBroadcast := IncMilliSecond(Now, FBroadcastIntervalMillisecond);
+      end;
+
+      // Pumps lNet events and blocks up to PollIntervalMS, so this is not a
+      // busy loop. Receive/Error events fire in this thread.
+      LConn.CallAction;
+
+      if not LConn.Connected then begin
+        // socket was dropped by an error; give it a moment and try to
+        // re-establish the listening socket once per failure
+        Sleep(100);
+        if Terminated then
+          Break;
+        if not LConn.Listen(FListenPort) then
+          Exit; // OnError handler already reported the reason
+      end;
     end;
-    FConn.CallAction;
+  finally
+    LConn.Free;
   end;
 end;
 
 { TYeeConn }
 
-procedure TYeeConn.BulbFound(aSocket: TLSocket);
-var
-  LRawResponse,LResponseLine, LKey, LValue: string;
-  LRawResponseText: TextFile;
-  LRawResponseStream: TStringStream;
-  LBulbInfo: TBulbInfo;
-  LColonPos: SizeInt;
+procedure TYeeConn.FireBulbFound(const ANewBulb: TBulbInfo);
 begin
-  if aSocket.GetMessage(LRawResponse) > 0 then begin
-    {$ifdef debug}WriteLn(LRawResponse);{$endif}
-    LRawResponseStream := TStringStream.Create(LRawResponse);
-    AssignStream(LRawResponseText, LRawResponseStream);
-    Reset(LRawResponseText);
-    while not EOF(LRawResponseText) do begin
-      ReadLn(LRawResponseText,LResponseLine);
-      LColonPos := Pos(':',LResponseLine);
-      if LColonPos > 0 then begin
-        LKey   := Copy(LResponseLine,1,LColonPos - 1);
-        LValue := Copy(LResponseLine,LColonPos + 2,Length(LResponseLine) - LColonPos + 2);
+  if Assigned(FOnBulbFound) then
+    FOnBulbFound(ANewBulb);
+end;
 
-        case LKey of
-          'id'        : LBulbInfo.ID                   := LValue;
-          // strip away protocol and port, only address is required
-          'Location'  : LBulbInfo.IP                   := Copy(LValue,12,Length(LValue) - 17);
-          'model'     : LBulbInfo.Model                := LValue;
-          'power'     : LBulbInfo.PoweredOn            := LValue = 'on';
-          'bright'    : LBulbInfo.BrightnessPercentage := StrToIntDef(LValue,1);
-          'color_mode': LBulbInfo.ColorMode            := TColorMode(StrToIntDef(LValue,2));
-          'rgb'       : LBulbInfo.RGB                  := TRGBRange(StrToIntDef(LValue,1));
-          'name'      : LBulbInfo.Name                 := LValue;
-          'ct'        : LBulbInfo.CT                   := TColorTemperature(StrToIntDef(LValue,1));
-        end;
-      end;
-    end;
-    LRawResponseStream.Free;
+procedure TYeeConn.FireConnectionError(const AMsg: String);
+begin
+  if Assigned(FConnectionError) then
+    FConnectionError(AMsg);
+end;
 
-    if Assigned(FOnBulbFound) then FOnBulbFound(LBulbInfo);
-  end else begin
-    WriteLn('Receive called with no message');
-  end;
+procedure TYeeConn.HandleSocketError(const msg: string; aSocket: TLSocket);
+begin
+  FLastCommandError := msg;
+  FHasCommandError := true;
 end;
 
 procedure TYeeConn.SendCommand(const AIP: String; const AID: Integer;
   const AMethod: String; AParams: array of const);
 var
+  LSocket: TLTcp;
   LJSONMsg, LJSONResult: TJSONObject;
   LJSONParams: TJSONArray;
-  LRawResult: String;
   LJSONMSgStr: TJSONStringType;
   LJSONID: TJSONData;
   LCmdID: Integer;
+  LBuffer, LChunk, LRawResult: String;
+  LDeadline: QWord;
 begin
-  with TLTcp.Create(nil) do
+  LSocket := TLTcp.Create(nil);
+  try
+    LSocket.Timeout := PollIntervalMS;
+    LSocket.OnError := @HandleSocketError;
+    FHasCommandError := false;
+    FLastCommandError := '';
+    LJSONMsg := nil;
+    LJSONParams := nil;
+    LJSONResult := nil;
     try
-      Timeout := 1000;
-      Port := FListenPort;
-      LJSONMsg := nil;
-      LJSONParams := nil;
-      LJSONResult := nil;
+      if LSocket.Connect(AIP, BulbPort) then begin
+        // lNet connects asynchronously; pump until connected, failed or the
+        // deadline passes. Every path below is bounded now.
+        LDeadline := GetTickCount64 + CommandConnectTimeoutMS;
+        while (not LSocket.Connected) and (not FHasCommandError) and
+              (GetTickCount64 < LDeadline) do
+          LSocket.CallAction;
 
-      if Connect(AIP,BulbPort) then begin
-        repeat
-          CallAction; // synchronizing the asynchronous
-        until Connected;
-        LJSONMsg := CreateJSONObject(['id',AID,'method',AMethod]);
-        LJSONParams := CreateJSONArray(AParams);
-        LJSONMsg['params'] := LJSONParams;
-        LJSONMSgStr := LJSONMsg.AsJSON;
-        {$ifdef debug}WriteLn('SendMessage (',{$endif}SendMessage(LJSONMSgStr + #13#10){$ifdef debug},'): ' + LJSONMSgStr){$endif};
+        if FHasCommandError then
+          FireConnectionError(FLastCommandError)
+        else if not LSocket.Connected then
+          FireConnectionError('Connect to ' + AIP + ':' + IntToStr(BulbPort) + ' timed out')
+        else begin
+          LJSONMsg := CreateJSONObject(['id', AID, 'method', AMethod]);
+          LJSONParams := CreateJSONArray(AParams);
+          LJSONMsg['params'] := LJSONParams;
+          LJSONMSgStr := LJSONMsg.AsJSON;
+          {$ifdef debug}WriteLn('SendMessage: ' + LJSONMSgStr);{$endif}
+          LSocket.SendMessage(LJSONMSgStr + #13#10);
 
-        if Assigned(FOnCommandResult) then begin
-          while GetMessage(LRawResult) <= 0 do CallAction;
-          {$ifdef debug}WriteLn('ResultReceived: ' + LRawResult);{$endif}
-          LJSONResult := TJSONObject(GetJSON(LRawResult));
-          LJSONID := LJSONResult.FindPath('id');
-          if Assigned(LJSONID) then LCmdID := LJSONID.AsInteger else LCmdID := -1;
-          FOnCommandResult(LCmdID,LJSONResult.FindPath('result'),LJSONResult.FindPath('error'));
+          if Assigned(FOnCommandResult) then begin
+            // TCP may deliver the JSON response in several chunks; accumulate
+            // until a complete JSON object can be parsed (or time runs out).
+            LBuffer := '';
+            LRawResult := '';
+            LDeadline := GetTickCount64 + CommandReceiveTimeoutMS;
+            while (not FHasCommandError) and LSocket.Connected and
+                  (GetTickCount64 < LDeadline) do begin
+              LSocket.CallAction;
+              LChunk := '';
+              if LSocket.Connected and (LSocket.GetMessage(LChunk) > 0) then begin
+                LBuffer += LChunk;
+                LRawResult := Trim(LBuffer);
+                try
+                  LJSONResult := TJSONObject(GetJSON(LRawResult));
+                except
+                  LJSONResult := nil;
+                end;
+                if Assigned(LJSONResult) then
+                  Break;
+              end;
+            end;
+
+            if not Assigned(LJSONResult) and (LRawResult <> '') then begin
+              // last chance: the response may have arrived without CRLF
+              try
+                LJSONResult := TJSONObject(GetJSON(LRawResult));
+              except
+                LJSONResult := nil;
+              end;
+            end;
+
+            if Assigned(LJSONResult) then begin
+              {$ifdef debug}WriteLn('ResultReceived: ' + LRawResult);{$endif}
+              LJSONID := LJSONResult.FindPath('id');
+              if Assigned(LJSONID) then
+                LCmdID := LJSONID.AsInteger
+              else
+                LCmdID := -1;
+              FOnCommandResult(LCmdID, LJSONResult.FindPath('result'), LJSONResult.FindPath('error'));
+            end else if FHasCommandError then
+              FireConnectionError(FLastCommandError)
+            else
+              FireConnectionError('No response from ' + AIP + ' within ' +
+                IntToStr(CommandReceiveTimeoutMS) + ' ms');
+          end;
         end;
+      end else begin
+        if FHasCommandError then
+          FireConnectionError(FLastCommandError)
+        else
+          FireConnectionError('Cannot initiate connection to ' + AIP + ':' + IntToStr(BulbPort));
       end;
     finally
       LJSONResult.Free;
       LJSONMsg.Free;
-      Disconnect(true);
-      Free;
     end;
-end;
-
-procedure TYeeConn.ConnectionError(const msg: string; aSocket: TLSocket);
-begin
-  if Assigned(FConnectionError) then FConnectionError(msg);
-end;
-
-procedure TYeeConn.CanSend(aSocket: TLSocket);
-begin
-  {$ifdef debug}WriteLn('SendMessage: ', {$endif}FUDPConn.SendMessage(BroadcastMessage){$ifdef debug}){$endif};
+  finally
+    LSocket.Free;
+  end;
 end;
 
 constructor TYeeConn.Create(const AListenPort: Word; const ABroadcastIntervalMillisecond: Integer);
 begin
   FListenPort := AListenPort;
-
-  FUDPConn := TLUdp.Create(nil);
-  with FUDPConn do begin
-    Timeout            := 1000;
-    FUDPConn.Port      := AListenPort;
-    FUDPConn.OnCanSend := @CanSend;
-    FUDPConn.OnReceive := @BulbFound;
-    FUDPConn.OnError   := @ConnectionError;
-  end;
-
-  FBroadcastThread := TBroadcastThread.Create(FUDPConn, ABroadcastIntervalMillisecond);
+  FBroadcastThread := TBroadcastThread.Create(Self, FListenPort, ABroadcastIntervalMillisecond);
+  TBroadcastThread(FBroadcastThread).Start;
 end;
 
 destructor TYeeConn.Destroy;
 begin
-  FBroadcastThread.Free;
-
-  FUDPConn.Disconnect(true);
-  FUDPConn.Free;
-
+  if Assigned(FBroadcastThread) then begin
+    FBroadcastThread.Terminate;
+    FBroadcastThread.WaitFor;
+    FBroadcastThread.Free;
+    FBroadcastThread := nil;
+  end;
   inherited Destroy;
 end;
 
 procedure TYeeConn.SetName(const AIP, AName: String);
 begin
-  SendCommand(AIP,1,'set_name',[AName])
+  SendCommand(AIP, 1, 'set_name', [AName]);
 end;
 
 procedure TYeeConn.SetPower(const AIP: String; const AIsOn: Boolean;
-  const ATransitionEfect: TTransitionEffect;
+  const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration;
   const AColorMode: TPowerColorMode);
 var
-  LPowerStateStr,LTransitionEfectStr: String;
+  LPowerStateStr, LTransitionEffectStr: String;
 begin
   if AIsOn then
     LPowerStateStr := 'on'
   else
     LPowerStateStr := 'off';
-  case ATransitionEfect of
-    teSmooth: LTransitionEfectStr := 'smooth';
-    teSudden: LTransitionEfectStr := 'sudden';
+  case ATransitionEffect of
+    teSmooth: LTransitionEffectStr := 'smooth';
+    teSudden: LTransitionEffectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_power',[LPowerStateStr,LTransitionEfectStr,ATransitionDuration,Ord(AColorMode)]);
+  SendCommand(AIP, 1, 'set_power', [LPowerStateStr, LTransitionEffectStr, ATransitionDuration, Ord(AColorMode)]);
 end;
 
 procedure TYeeConn.SetBrightness(const AIP: String;
-  const ABrightness: TPercentage; const ATransitionEfect: TTransitionEffect;
+  const ABrightness: TPercentage; const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration;
   const AColorMode: TPowerColorMode);
 var
-  LTransitionEfectStr: String;
+  LTransitionEffectStr: String;
 begin
-  case ATransitionEfect of
-    teSmooth: LTransitionEfectStr := 'smooth';
-    teSudden: LTransitionEfectStr := 'sudden';
+  case ATransitionEffect of
+    teSmooth: LTransitionEffectStr := 'smooth';
+    teSudden: LTransitionEffectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_bright',[ABrightness,LTransitionEfectStr,ATransitionDuration]);
+  SendCommand(AIP, 1, 'set_bright', [ABrightness, LTransitionEffectStr, ATransitionDuration]);
 end;
 
 procedure TYeeConn.SetColorTemperature(const AIP: String;
   const AColorTemperature: TColorTemperature;
-  const ATransitionEfect: TTransitionEffect;
+  const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration);
 var
-  LTransitionEfectStr: String;
+  LTransitionEffectStr: String;
 begin
-  case ATransitionEfect of
-    teSmooth: LTransitionEfectStr := 'smooth';
-    teSudden: LTransitionEfectStr := 'sudden';
+  case ATransitionEffect of
+    teSmooth: LTransitionEffectStr := 'smooth';
+    teSudden: LTransitionEffectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_ct_abx',[AColorTemperature,LTransitionEfectStr,ATransitionDuration]);
+  SendCommand(AIP, 1, 'set_ct_abx', [AColorTemperature, LTransitionEffectStr, ATransitionDuration]);
 end;
 
 procedure TYeeConn.SetRGB(const AIP: String; const ARGB: TRGBRange;
-  const ATransitionEfect: TTransitionEffect;
+  const ATransitionEffect: TTransitionEffect;
   const ATransitionDuration: TTransitionDuration);
 var
-  LTransitionEfectStr: String;
+  LTransitionEffectStr: String;
 begin
-  case ATransitionEfect of
-    teSmooth: LTransitionEfectStr := 'smooth';
-    teSudden: LTransitionEfectStr := 'sudden';
+  case ATransitionEffect of
+    teSmooth: LTransitionEffectStr := 'smooth';
+    teSudden: LTransitionEffectStr := 'sudden';
   end;
-  SendCommand(AIP,1,'set_rgb',[NtoBE(ColorToRGB(ARGB)) shr 8,LTransitionEfectStr,ATransitionDuration]);
+  SendCommand(AIP, 1, 'set_rgb', [NtoBE(ColorToRGB(ARGB)) shr 8, LTransitionEffectStr, ATransitionDuration]);
 end;
 
 end.
-

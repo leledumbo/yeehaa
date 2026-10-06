@@ -206,9 +206,9 @@ begin
   ABroker.OnCommandResult := ACallbackEvent;
 end;
 
-procedure SetPower(const ABroker: TYeeBroker; const AIP: PChar; const AIsOn: cbool; const ATransitionEfect: TTransitionEfect; const ATransitionDuration: TTransitionDuration); cdecl;
+procedure SetPower(const ABroker: TYeeBroker; const AIP: PChar; const AIsOn: cbool; const ATransitionEffect: TTransitionEffect; const ATransitionDuration: TTransitionDuration); cdecl;
 begin
-  ABroker.Conn.SetPower(String(AIP),AIsOn,ATransitionEfect,ATransitionDuration);
+  ABroker.Conn.SetPower(String(AIP),AIsOn,ATransitionEffect,ATransitionDuration);
 end;
 
 exports
